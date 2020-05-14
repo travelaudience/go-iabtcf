@@ -1,4 +1,4 @@
-module github.com/travelaudience/go-tcf2
+module github.com/travelaudience/go-iabtcf
 
 go 1.13
 
