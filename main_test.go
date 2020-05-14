@@ -13,6 +13,7 @@ func TestParseCoreString(t *testing.T) {
 		wantSpecialFeaturesAllowed bool
 		wantVendorAllowed          bool
 		publisherCountry           string
+		wantVersion int
 		wantErr                    bool
 	}{
 		{
@@ -22,7 +23,28 @@ func TestParseCoreString(t *testing.T) {
 			true,
 			true,
 			"AA",
+			0,
 			true,
+		},
+		{
+			"v1 string #1",
+			"BOv1FaTOv1FdvAHABBFRDG-AAAAvRr_7__7-_9_-_f__9uj3Or_v_f__32ccL59v_h_7v-_7fi_20nV4u_1vft9yfk1-5ctDztp507iakivXmqdeb1v_nz3_5pxP78k89r7337Ew_v8_v-b7BCON9YxEiAAA",
+			false,
+			false,
+			false,
+			"",
+			1,
+			true,
+		},
+		{
+			"v1 string #2",
+			"BOzZQ6oOzZQ6oAAAAAktB6-AAAAlWD8AB4ABwA_4AlgCpgHTAQuAD4AqoCKQBCAERABeAO0AYIAWACpAEGAP4ANYAXAAtwCOgDgAMMAlUAIgAYQAYAAVAOIAH8Az4ACwASACjAA2AK0BD4BrgABAE3AH6AJwANwAOQBDAAeAAkAjUAFIAogADACTAKKATUAdQAdwAegHUADmAQABB4A6wDFAIKAIUAAEAngAUQBzgBPAM0AFwAsoAlAAHgBQAQMADQAkwAzgBLgE7AJ-ARMATYACAAPgCYAGiABgAaoBgwBiAB9AAIATQAKgBSACXADZAC2AbIAGIACgAWgDuAFcABkANAB8wCqABwAL8ADMAyYApQDlAFnAC8AU0APgAIgCLADiAAcAE0AcoB5ADhAFdAC0AS0A84CBAAGgHaAISAawBDABnQAqgGNAGaAYAAfQACQAnAAqADaAd8AcYA1AAhgG7ANOAJUAKQAjgArAChANAARwBIAARQAxADCADKAEEAewB0gBwgDIAB-ADIAT4AUwB6gCMAEAAeYA34BmQBoACdAHQAagAuoAOwAGAEZAIKAYEACwBhABeAG6ADSAi8AYABbQCVAIgAHiAHEALoCSwC4gAlAAuAIkAvoBxwBVAHbAIEAfQAI4BJwAIAErAG0AWYAUgBPQD7ADyAKgAa0A9wAAwBFgC5ABAAEkAJACPADXgHqAMuAgAAnAATAC9ACPAQ6ACwA_QB1QCSgB-A",
+			false,
+			false,
+			false,
+			"",
+			1,
+			false,
 		},
 		{
 			"10 purposes and 2 special features allowed, vendor allowed",
@@ -31,6 +53,7 @@ func TestParseCoreString(t *testing.T) {
 			true,
 			true,
 			"AA",
+			2,
 			false,
 		},
 		{
@@ -40,6 +63,7 @@ func TestParseCoreString(t *testing.T) {
 			false,
 			false,
 			"AA",
+			2,
 			false,
 		},
 	}
@@ -58,6 +82,14 @@ func TestParseCoreString(t *testing.T) {
 				t.Errorf("ParseCoreString() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
+				return
+			}
+
+			if got.Version != tt.wantVersion {
+				t.Errorf("Version failed. Expected %d, got %d", tt.wantVersion, got.Version)
+			}
+
+			if got.Version != 2 {
 				return
 			}
 
