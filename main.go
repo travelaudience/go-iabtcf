@@ -86,7 +86,7 @@ func ParseCoreString(c string) (*Consent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("PublisherCC parse failed: %s", err.Error())
 	}
-	p.MaxVendorID, err = r.ReadInt(12)
+	p.MaxVendorID, err = r.ReadInt(16)
 	if err != nil {
 		return nil, fmt.Errorf("MaxVendorID parse failed: %s", err.Error())
 	}
