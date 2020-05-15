@@ -8,11 +8,13 @@ Library provides convenient way to check if:
 - purposes are allowed
 - special fetures are allowed
 
-## Installation
+## Getting Started
+
+### Installing
 
     go get -v github.com/travelaudience/go-iabtcf
     
-## Example
+### Example
 
     package main
     
@@ -32,3 +34,11 @@ Library provides convenient way to check if:
       sf := s.EverySpecialFeatureAllowed([]int{1})
       va := s.VendorAllowed(1)
     }
+    
+## Contributing
+
+Contributions are welcomed! Read the [Contributing Guide](.github/CONTRIBUTING.md) for more information.
+
+## Licensing
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
