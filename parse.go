@@ -9,10 +9,7 @@ import (
 )
 
 // ParseCoreString parses a core string and returns a Consent object
-//
-// If wantVersion is not 0, it will check if the version of the core string matches wantVersion
-// If it does not match, the process is skipped and it will return an error
-func ParseCoreString(c string, wantVersion int) (*Consent, error) {
+func ParseCoreString(c string) (*Consent, error) {
 	if c == "" {
 		return nil, errors.New("string is empty")
 	}
@@ -29,9 +26,6 @@ func ParseCoreString(c string, wantVersion int) (*Consent, error) {
 	p.Version, err = r.ReadInt(6)
 	if err != nil {
 		return nil, fmt.Errorf("Version parse failed: %s", err.Error())
-	}
-	if wantVersion != 0 && p.Version != wantVersion {
-		return nil, fmt.Errorf("Version mismatch: got %d, want %d", p.Version, wantVersion)
 	}
 	p.Created, err = r.ReadTime()
 	if err != nil {

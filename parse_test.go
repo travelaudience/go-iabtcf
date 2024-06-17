@@ -285,7 +285,7 @@ func TestConsentMethods(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := ParseCoreString(tc.consentString, 0)
+			got, gotErr := ParseCoreString(tc.consentString)
 
 			if tc.wantErr != "" {
 				require.Equal(t, tc.wantErr, gotErr.Error(), "expected error")
@@ -368,7 +368,7 @@ func TestParseCoreString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseCoreString(tt.c, 0)
+			got, err := ParseCoreString(tt.c)
 			if tt.wantErr {
 				require.Error(t, err, "missing error")
 			} else {
