@@ -45,10 +45,10 @@ func (r *Reader) ReadTime() (time.Time, error) {
 }
 
 // ReadString reads a string of length n
-func (r *Reader) ReadString(n uint) (string, error) {
-	n = n / 6 // 6 bit per letter
-	var buf = make([]byte, 0, n)
-	for i := uint(0); i < n; i++ {
+func (r *Reader) ReadString(length int) (string, error) {
+	length = length / 6 // 6 bit per letter
+	var buf = make([]byte, 0, length)
+	for i := 0; i < length; i++ {
 		if b, err := r.ReadBits(6); err != nil {
 			return "", fmt.Errorf("ReadBits failed: %s", err.Error())
 		} else {
@@ -58,23 +58,34 @@ func (r *Reader) ReadString(n uint) (string, error) {
 	return string(buf), nil
 }
 
-// ReadBitField reads the next n bits into a map[int]bool
-func (r *Reader) ReadBitField(n uint) (map[int]bool, error) {
-	var m = make(map[int]bool)
-	for i := uint(0); i < n; i++ {
-		b, err := r.ReadBool()
+// ReadBitField reads the next n bits into a bit map
+func (r *Reader) ReadBitField(length int) (*Bits, error) {
+	remaining := length % 8
+	nb := (length - remaining) / 8
+	bytes := make([]byte, 0, nb+1)
+	for i := 0; i < nb; i++ {
+		b, err := r.ReadByte()
 		if err != nil {
-			return nil, fmt.Errorf("ReadBool failed: %s", err.Error())
+			return nil, fmt.Errorf("ReadByte failed: %s", err.Error())
 		}
-		m[int(i)+1] = b
+		bytes = append(bytes, b)
 	}
-	return m, nil
+	if remaining > 0 {
+		block, err := r.ReadBits(uint(remaining))
+		if err != nil {
+			return nil, fmt.Errorf("ReadBits failed: %s", err.Error())
+		}
+		// note: bits are right aligned
+		b := byte(block << (8 - remaining))
+		bytes = append(bytes, b)
+	}
+	return &Bits{Bytes: bytes, Length: length}, nil
 }
 
-func (r *Reader) ReadRangeEntries(n uint) ([]*RangeEntry, error) {
-	res := make([]*RangeEntry, 0, n)
+func (r *Reader) ReadRangeEntries(length int) ([]*RangeEntry, error) {
+	res := make([]*RangeEntry, 0, length)
 	var err error
-	for i := uint(0); i < n; i++ {
+	for i := 0; i < length; i++ {
 		var isRange bool
 		if isRange, err = r.ReadBool(); err != nil {
 			return nil, fmt.Errorf("ReadBool failed: %s", err.Error())

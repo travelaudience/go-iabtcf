@@ -8,12 +8,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ParseCoreString(c string) (*Consent, error) {
+// ParseCoreString parses a core string and returns a Consent object
+//
+// If wantVersion is not 0, it will check if the version of the core string matches wantVersion
+// If it does not match, the process is skipped and it will return an error
+func ParseCoreString(c string, wantVersion int) (*Consent, error) {
 	if c == "" {
 		return nil, errors.New("string is empty")
 	}
 	// extract core string
-	cs := strings.Split(c, ".")[0]
+	cs := strings.SplitN(c, ".", 2)[0]
 
 	var b, err = base64.RawURLEncoding.DecodeString(cs)
 	if err != nil {
@@ -25,6 +29,9 @@ func ParseCoreString(c string) (*Consent, error) {
 	p.Version, err = r.ReadInt(6)
 	if err != nil {
 		return nil, fmt.Errorf("Version parse failed: %s", err.Error())
+	}
+	if wantVersion != 0 && p.Version != wantVersion {
+		return nil, fmt.Errorf("Version mismatch: got %d, want %d", p.Version, wantVersion)
 	}
 	p.Created, err = r.ReadTime()
 	if err != nil {
@@ -100,12 +107,12 @@ func ParseCoreString(c string) (*Consent, error) {
 		if err != nil {
 			return nil, fmt.Errorf("NumEntries parse failed: %s", err.Error())
 		}
-		p.RangeEntries, err = r.ReadRangeEntries(uint(p.NumEntries))
+		p.RangeEntries, err = r.ReadRangeEntries(p.NumEntries)
 		if err != nil {
 			return nil, fmt.Errorf("RangeEntries parse failed: %s", err.Error())
 		}
 	} else {
-		p.ConsentedVendors, err = r.ReadBitField(uint(p.MaxVendorID))
+		p.ConsentedVendors, err = r.ReadBitField(p.MaxVendorID)
 		if err != nil {
 			return nil, fmt.Errorf("ConsentedVendors parse failed: %s", err.Error())
 		}
