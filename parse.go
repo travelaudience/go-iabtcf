@@ -2,113 +2,110 @@ package iabtcf
 
 import (
 	"encoding/base64"
-	"fmt"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // ParseCoreString parses a core string and returns a Consent object
 func ParseCoreString(c string) (*Consent, error) {
 	if c == "" {
-		return nil, errors.New("string is empty")
+		return nil, ErrEmptyString
 	}
 	// extract core string
 	cs := strings.SplitN(c, ".", 2)[0]
 
 	var b, err = base64.RawURLEncoding.DecodeString(cs)
 	if err != nil {
-		return nil, fmt.Errorf("DecodeString failed: %s", err.Error())
+		return nil, ErrDecodeFailed(err)
 	}
 
 	r := NewReader(b)
 	p := &Consent{}
 	p.Version, err = r.ReadInt(6)
 	if err != nil {
-		return nil, fmt.Errorf("Version parse failed: %s", err.Error())
+		return nil, ErrVersionFailed(err)
 	}
 	p.Created, err = r.ReadTime()
 	if err != nil {
-		return nil, fmt.Errorf("Created parse failed: %s", err.Error())
+		return nil, ErrCreatedFailed(err)
 	}
 	p.LastUpdated, err = r.ReadTime()
 	if err != nil {
-		return nil, fmt.Errorf("LastUpdated parse failed: %s", err.Error())
+		return nil, ErrLastUpdatedFailed(err)
 	}
 	p.CMPID, err = r.ReadInt(12)
 	if err != nil {
-		return nil, fmt.Errorf("CMPID parse failed: %s", err.Error())
+		return nil, ErrCMPIDFailed(err)
 	}
 	p.CMPVersion, err = r.ReadInt(12)
 	if err != nil {
-		return nil, fmt.Errorf("CMPVersion parse failed: %s", err.Error())
+		return nil, ErrCMPVersionFailed(err)
 	}
 	p.ConsentScreen, err = r.ReadInt(6)
 	if err != nil {
-		return nil, fmt.Errorf("ConsentScreen parse failed: %s", err.Error())
+		return nil, ErrConsentScreenFailed(err)
 	}
 	p.ConsentLanguage, err = r.ReadString(12)
 	if err != nil {
-		return nil, fmt.Errorf("ConsentLanguage parse failed: %s", err.Error())
+		return nil, ErrConsentLanguageFailed(err)
 	}
 	p.VendorListVersion, err = r.ReadInt(12)
 	if err != nil {
-		return nil, fmt.Errorf("VendorListVersion parse failed: %s", err.Error())
+		return nil, ErrVendorListVersionFailed(err)
 	}
 	p.TcfPolicyVersion, err = r.ReadInt(6)
 	if err != nil {
-		return nil, fmt.Errorf("TcfPolicyVersion parse failed: %s", err.Error())
+		return nil, ErrTcfPolicyVersionFailed(err)
 	}
 	p.IsServiceSpecific, err = r.ReadBool()
 	if err != nil {
-		return nil, fmt.Errorf("IsServiceSpecific parse failed: %s", err.Error())
+		return nil, ErrIsServiceSpecificFailed(err)
 	}
 	p.UseNonStandardStacks, err = r.ReadBool()
 	if err != nil {
-		return nil, fmt.Errorf("UseNonStandardStacks parse failed: %s", err.Error())
+		return nil, ErrUseNonStandardStacksFailed(err)
 	}
 	p.SpecialFeatureOptIns, err = r.ReadBitField(12)
 	if err != nil {
-		return nil, fmt.Errorf("SpecialFeatureOptIns parse failed: %s", err.Error())
+		return nil, ErrSpecialFeatureOptInsFailed(err)
 	}
 	p.PurposesConsent, err = r.ReadBitField(24)
 	if err != nil {
-		return nil, fmt.Errorf("PurposesConsent parse failed: %s", err.Error())
+		return nil, ErrPurposesConsentFailed(err)
 	}
 	p.PurposesLITransparency, err = r.ReadBitField(24)
 	if err != nil {
-		return nil, fmt.Errorf("PurposesLITransparency parse failed: %s", err.Error())
+		return nil, ErrPurposesLITransparencyFailed(err)
 	}
 	p.PurposeOneTreatment, err = r.ReadBool()
 	if err != nil {
-		return nil, fmt.Errorf("PurposeOneTreatment parse failed: %s", err.Error())
+		return nil, ErrPurposeOneTreatmentFailed(err)
 	}
 	p.PublisherCC, err = r.ReadString(12)
 	if err != nil {
-		return nil, fmt.Errorf("PublisherCC parse failed: %s", err.Error())
+		return nil, ErrPublisherCCFailed(err)
 	}
 	p.MaxVendorID, err = r.ReadInt(16)
 	if err != nil {
-		return nil, fmt.Errorf("MaxVendorID parse failed: %s", err.Error())
+		return nil, ErrMaxVendorIDFailed(err)
 	}
 	p.IsRangeEncoding, err = r.ReadBool()
 	if err != nil {
-		return nil, fmt.Errorf("IsRangeEncoding parse failed: %s", err.Error())
+		return nil, ErrIsRangeEncodingFailed(err)
 	}
 
 	if p.IsRangeEncoding {
 		p.NumEntries, err = r.ReadInt(12)
 		if err != nil {
-			return nil, fmt.Errorf("NumEntries parse failed: %s", err.Error())
+			return nil, ErrNumEntriesFailed(err)
 		}
 		p.RangeEntries, err = r.ReadRangeEntries(p.NumEntries)
 		if err != nil {
-			return nil, fmt.Errorf("RangeEntries parse failed: %s", err.Error())
+			return nil, ErrRangeEntriesFailed(err)
 		}
 	} else {
 		p.ConsentedVendors, err = r.ReadBitField(p.MaxVendorID)
 		if err != nil {
-			return nil, fmt.Errorf("ConsentedVendors parse failed: %s", err.Error())
+			return nil, ErrConsentedVendorsFailed(err)
 		}
 	}
 

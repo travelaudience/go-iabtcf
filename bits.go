@@ -3,6 +3,7 @@ package iabtcf
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // //////////////////////////////////////////////////
@@ -13,17 +14,98 @@ type Bits struct {
 	Bytes  []byte
 }
 
-func (bits *Bits) HasBit(number int) bool {
-	if number < 1 || number > bits.Length {
-		// out of scope
-		return false
+func (b *Bits) HasBit(number int) bool {
+	value, _ := b.ReadBoolField(number - 1)
+	return value
+}
+
+func (b *Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
+	if err := b.checkBounds(offset, nbBits); err != nil {
+		return 0, err
 	}
-	byteIndex := (number - 1) / 8
-	b := bits.Bytes[byteIndex]
-	bitIndex := (number - 1) % 8
-	mask := byte(1 << (7 - bitIndex))
-	// fmt.Printf("[HasBit] number: %d / byteIndex: %d / b: %d / bitIndex:%d / mask:%d / &:%d > %t", number, byteIndex, b, bitIndex, mask, b&mask, b&mask == mask)
-	return b&mask == mask
+	var result int64
+	byteIndex := offset / 8
+	bitIndex := offset % 8
+	for i := 0; i < nbBits; i++ {
+		mask := byte(1 << (7 - bitIndex))
+		if b.Bytes[byteIndex]&mask == mask {
+			result |= 1 << (nbBits - 1 - i)
+		}
+		if bitIndex == 7 {
+			byteIndex++
+			bitIndex = 0
+		} else {
+			bitIndex++
+		}
+	}
+	return result, nil
+}
+
+func (b *Bits) ReadIntField(offset, nbBits int) (int, error) {
+	value, err := b.ReadInt64Field(offset, nbBits)
+	if err != nil {
+		return 0, err
+	}
+	return int(value), nil
+}
+
+const (
+	TimeNbBits = 36
+)
+
+func (b *Bits) ReadTimeField(offset int) (time.Time, error) {
+	ds, err := b.ReadInt64Field(offset, TimeNbBits)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(ds/dsPerSec, (ds%dsPerSec)*nsPerDs).UTC(), nil
+}
+
+const (
+	CharacterNbBits = 6
+)
+
+func (b *Bits) ReadStringField(offset, nbBits int) (string, error) {
+	length := nbBits / CharacterNbBits
+	if nbBits%CharacterNbBits != 0 {
+		return "", ErrInvalidNbBitsMultiple(nbBits, CharacterNbBits)
+	}
+	var buf = make([]byte, 0, length)
+	nextOffset := offset
+	for i := 0; i < length; i++ {
+		value, err := b.ReadInt64Field(nextOffset, CharacterNbBits)
+		if err != nil {
+			return "", err
+		}
+		buf = append(buf, byte(value)+'A')
+		nextOffset += CharacterNbBits
+	}
+	return string(buf), nil
+}
+
+const (
+	BoolNbBits = 1
+)
+
+func (b *Bits) ReadBoolField(offset int) (bool, error) {
+	value, err := b.ReadInt64Field(offset, BoolNbBits)
+	if err != nil {
+		return false, err
+	}
+	return value == 1, nil
+}
+
+func (b *Bits) checkBounds(offset, nbBits int) error {
+	if b == nil {
+		return ErrNilBits
+	}
+	if offset < 0 {
+		return ErrNegativeBitIndex(offset)
+	}
+	if offset+nbBits > b.Length {
+		return ErrBitIndexHigherThanUpperBound(offset+nbBits, b.Length)
+	}
+	return nil
 }
 
 func (bits *Bits) ToBitString() string {
@@ -51,8 +133,8 @@ func (bits *Bits) ToBitString() string {
 // //////////////////////////////////////////////////
 // bit string helper
 
-func BitStringToBits(value string) *Bits {
-	return &Bits{
+func BitStringToBits(value string) Bits {
+	return Bits{
 		Length: len(strings.ReplaceAll(string(value), " ", "")),
 		Bytes:  BitStringToBytes(value),
 	}
