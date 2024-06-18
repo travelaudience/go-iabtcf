@@ -20,8 +20,12 @@ type Bits []byte
 //
 // note: number is not the index and it starts at 1.
 func (b Bits) HasBit(number int) bool {
-	value, _ := b.ReadBoolField(number - 1)
-	return value
+	return b.ReadBoolField(number - 1)
+}
+
+// Length returns the number of bits in the bitset
+func (b Bits) Length() int {
+	return len(b) * nbBitInByte
 }
 
 const (
@@ -43,12 +47,19 @@ var (
 )
 
 // ReadInt64Field reads an int64 field of nbBits bits starting at offset
-func (b Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
-	if err := b.checkBounds(offset, nbBits); err != nil {
-		return 0, err
+//
+// note: if offset is negative, the result will be zero
+// note: if offset + nbBits is out of bound, the result will be the same if we were adding trailing zeros
+// example: 00101 > read with offset 2 and nbBits 5 > equivalent to reading 10100 = 20
+func (b Bits) ReadInt64Field(offset, nbBits int) int64 {
+	if offset < 0 {
+		return 0
 	}
 	var result int64
 	byteIndex := offset / nbBitInByte
+	if byteIndex >= len(b) {
+		return result
+	}
 	bitIndex := offset % nbBitInByte
 	for i := 0; i < nbBits; i++ {
 		mask := bitMasks[bitIndex]
@@ -57,21 +68,20 @@ func (b Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
 		}
 		if bitIndex == lastBitIndex {
 			byteIndex++
+			if byteIndex >= len(b) {
+				return result
+			}
 			bitIndex = 0
 		} else {
 			bitIndex++
 		}
 	}
-	return result, nil
+	return result
 }
 
 // ReadIntField reads an int field of nbBits bits starting at offset
-func (b *Bits) ReadIntField(offset, nbBits int) (int, error) {
-	value, err := b.ReadInt64Field(offset, nbBits)
-	if err != nil {
-		return 0, err
-	}
-	return int(value), nil
+func (b *Bits) ReadIntField(offset, nbBits int) int {
+	return int(b.ReadInt64Field(offset, nbBits))
 }
 
 const (
@@ -79,12 +89,9 @@ const (
 )
 
 // ReadTimeField reads a time field of 36 bits starting at offset
-func (b *Bits) ReadTimeField(offset int) (time.Time, error) {
-	ds, err := b.ReadInt64Field(offset, TimeNbBits)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return time.Unix(ds/dsPerSec, (ds%dsPerSec)*nsPerDs).UTC(), nil
+func (b *Bits) ReadTimeField(offset int) time.Time {
+	ds := b.ReadInt64Field(offset, TimeNbBits)
+	return time.Unix(ds/dsPerSec, (ds%dsPerSec)*nsPerDs).UTC()
 }
 
 const (
@@ -95,22 +102,16 @@ const (
 //
 // note: each character is represented by 6 bits, so the number of bits must be a multiple of 6
 // note: the characters are represented by the uppercase alphabet starting from 'A'
-func (b *Bits) ReadStringField(offset, nbBits int) (string, error) {
+func (b *Bits) ReadStringField(offset, nbBits int) string {
 	length := nbBits / CharacterNbBits
-	if nbBits%CharacterNbBits != 0 {
-		return "", fmt.Errorf("number of bits %d is not multiple of %d bits", nbBits, CharacterNbBits)
-	}
 	var buf = make([]byte, 0, length)
 	nextOffset := offset
 	for i := 0; i < length; i++ {
-		value, err := b.ReadInt64Field(nextOffset, CharacterNbBits)
-		if err != nil {
-			return "", err
-		}
+		value := b.ReadInt64Field(nextOffset, CharacterNbBits)
 		buf = append(buf, byte(value)+'A')
 		nextOffset += CharacterNbBits
 	}
-	return string(buf), nil
+	return string(buf)
 }
 
 const (
@@ -118,25 +119,8 @@ const (
 )
 
 // ReadBoolField reads a bool field of 1 bit starting at offset
-func (b *Bits) ReadBoolField(offset int) (bool, error) {
-	value, err := b.ReadInt64Field(offset, BoolNbBits)
-	if err != nil {
-		return false, err
-	}
-	return value == 1, nil
-}
-
-func (b Bits) checkBounds(offset, nbBits int) error {
-	if b == nil {
-		return fmt.Errorf("bits is nil")
-	}
-	if offset < 0 {
-		return fmt.Errorf("negative bit index: %d", offset)
-	}
-	if offset+nbBits > len(b)*nbBitInByte {
-		return fmt.Errorf("bit index %d is higher than upper bound %d", offset+nbBits, len(b)*nbBitInByte)
-	}
-	return nil
+func (b *Bits) ReadBoolField(offset int) bool {
+	return b.ReadInt64Field(offset, BoolNbBits) == 1
 }
 
 // ToBitString returns the bitset as a string of bits ( human readable 0s and 1s )

@@ -39,94 +39,36 @@ func TestLazyParse(t *testing.T) {
 
 			require.Equal(t, wantErr, gotErr)
 
-			gotVersion, err := gotParsed.Version()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.Version, gotVersion)
-
-			gotCreated, err := gotParsed.Created()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.Created, gotCreated)
-
-			gotLastUpdated, err := gotParsed.LastUpdated()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.LastUpdated, gotLastUpdated)
-
-			gotCMPID, err := gotParsed.CMPID()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.CMPID, gotCMPID)
-
-			gotCMPVersion, err := gotParsed.CMPVersion()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.CMPVersion, gotCMPVersion)
-
-			gotConsentScreen, err := gotParsed.ConsentScreen()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.ConsentScreen, gotConsentScreen)
-
-			gotConsentLanguage, err := gotParsed.ConsentLanguage()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.ConsentLanguage, gotConsentLanguage)
-
-			gotVendorListVersion, err := gotParsed.VendorListVersion()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.VendorListVersion, gotVendorListVersion)
-
-			gotTcfPolicyVersion, err := gotParsed.TcfPolicyVersion()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.TcfPolicyVersion, gotTcfPolicyVersion)
-
-			gotIsServiceSpecific, err := gotParsed.IsServiceSpecific()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.IsServiceSpecific, gotIsServiceSpecific)
-
-			gotUseNonStandardStacks, err := gotParsed.UseNonStandardStacks()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.UseNonStandardStacks, gotUseNonStandardStacks)
-
-			gotPurposeOneTreatment, err := gotParsed.PurposeOneTreatment()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.PurposeOneTreatment, gotPurposeOneTreatment)
-
-			gotPublisherCC, err := gotParsed.PublisherCC()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.PublisherCC, gotPublisherCC)
-
-			gotIsRangeEncoding, err := gotParsed.IsRangeEncoding()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.IsRangeEncoding, gotIsRangeEncoding)
+			require.Equal(t, wantParsed.Version, gotParsed.Version())
+			require.Equal(t, wantParsed.Created, gotParsed.Created())
+			require.Equal(t, wantParsed.LastUpdated, gotParsed.LastUpdated())
+			require.Equal(t, wantParsed.CMPID, gotParsed.CMPID())
+			require.Equal(t, wantParsed.CMPVersion, gotParsed.CMPVersion())
+			require.Equal(t, wantParsed.ConsentScreen, gotParsed.ConsentScreen())
+			require.Equal(t, wantParsed.ConsentLanguage, gotParsed.ConsentLanguage())
+			require.Equal(t, wantParsed.VendorListVersion, gotParsed.VendorListVersion())
+			require.Equal(t, wantParsed.TcfPolicyVersion, gotParsed.TcfPolicyVersion())
+			require.Equal(t, wantParsed.IsServiceSpecific, gotParsed.IsServiceSpecific())
+			require.Equal(t, wantParsed.UseNonStandardStacks, gotParsed.UseNonStandardStacks())
+			require.Equal(t, wantParsed.PurposeOneTreatment, gotParsed.PurposeOneTreatment())
+			require.Equal(t, wantParsed.PublisherCC, gotParsed.PublisherCC())
+			require.Equal(t, wantParsed.IsRangeEncoding, gotParsed.IsRangeEncoding())
 
 			for number := 1; number <= SpecialFeatureOptInsField.NbBits; number++ {
-				gotAllowed, err := gotParsed.SpecialFeatureAllowed(number)
-				require.NoError(t, err, "unexpected error")
-				require.Equal(t, wantParsed.SpecialFeatureAllowed(number), gotAllowed)
+				require.Equal(t, wantParsed.SpecialFeatureAllowed(number), gotParsed.SpecialFeatureAllowed(number), "special feature %d", number)
 			}
-
 			for number := 1; number <= PurposesConsentField.NbBits; number++ {
-				gotAllowed, err := gotParsed.PurposeAllowed(number)
-				require.NoError(t, err, "unexpected error")
-				require.Equal(t, wantParsed.PurposeAllowed(number), gotAllowed)
+				require.Equal(t, wantParsed.PurposeAllowed(number), gotParsed.PurposeAllowed(number), "purpose %d", number)
 			}
-
 			for number := 1; number <= PurposesLITransparencyField.NbBits; number++ {
-				gotAllowed, err := gotParsed.PurposeLITransparencyAllowed(number)
-				require.NoError(t, err, "unexpected error")
-				require.Equal(t, wantParsed.PurposeLITransparencyAllowed(number), gotAllowed)
+				require.Equal(t, wantParsed.PurposeLITransparencyAllowed(number), gotParsed.PurposeLITransparencyAllowed(number), "purpose LIT %d", number)
 			}
-
+			require.Equal(t, wantParsed.MaxVendorID, gotParsed.MaxVendorID())
 			if wantParsed.IsRangeEncoding {
-				gotNumRangeEntries, err := gotParsed.NumRangeEntries()
-				require.NoError(t, err, "unexpected error")
-				require.Equal(t, wantParsed.NumEntries, gotNumRangeEntries)
+				require.Equal(t, wantParsed.NumEntries, gotParsed.NumRangeEntries())
 			}
-
-			gotMaxVendorID, err := gotParsed.MaxVendorID()
-			require.NoError(t, err, "unexpected error")
-			require.Equal(t, wantParsed.MaxVendorID, gotMaxVendorID)
-
 			for number := 1; number <= wantParsed.MaxVendorID; number++ {
-				gotAllowed, err := gotParsed.VendorAllowed(number)
-				require.NoError(t, err, "unexpected error")
-				require.Equal(t, wantParsed.VendorAllowed(number), gotAllowed)
+				require.Equal(t, wantParsed.VendorAllowed(number), gotParsed.VendorAllowed(number), "vendor %d", number)
 			}
 		})
 	}

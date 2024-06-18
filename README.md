@@ -51,9 +51,9 @@ Library provides convenient way to check if:
         panic(err)
       }
       
-      pa, err := s.EveryPurposeAllowed([]int{1})
-      sf, err := s.EverySpecialFeatureAllowed([]int{1})
-      va, err := s.VendorAllowed(1)
+      pa := s.EveryPurposeAllowed([]int{1})
+      sf := s.EverySpecialFeatureAllowed([]int{1})
+      va := s.VendorAllowed(1)
     }
     
 ## Contributing

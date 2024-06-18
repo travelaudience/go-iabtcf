@@ -9,9 +9,12 @@ import (
 
 // LazyParseCoreString parses a TCF consent string into a LazyConsent
 //
-// note: the parser is only decoding the base64 string and storing the bytes.
-// the parsing is done only when the field is accessed.
-// the client will have to handle the errors when accessing the fields
+// note: The parser is only decoding the base64 string,
+// checking if consent string has at least the minimum length to decode most of the fields,
+// and then storing the bytes.
+// The field parsing is done only when the field is accessed.
+// Since the minimum length check is done, all fields ( except vendor fields ) can be accessed without error.
+// For the vendor part, if the consent string is too short or invalid, the vendor will be considered as not allowed.
 //
 // note: the lazy parser is optimized for checking only one vendor + few fields
 func LazyParseCoreString(c string) (*LazyConsent, error) {
@@ -26,7 +29,17 @@ func LazyParseCoreString(c string) (*LazyConsent, error) {
 		return nil, fmt.Errorf("decode failed: %w", err)
 	}
 
-	return NewLazyConsent(bytes), nil
+	consent := NewLazyConsent(bytes)
+
+	// note: is_range_encoding is the last fixed field.
+	// after this bit, we will have either range entries ( up to num_entries ) or vendor bitset ( up to max_vendor_id ).
+	// we are just checking here that we are able to read at minimum the fixed fields.
+	// if after this bit, the consent string is too short or invalid, we will just return that the vendor is not allowed
+	if consent.Length() < IsRangeEncodingField.NextOffset() {
+		return nil, fmt.Errorf("consent string is too short")
+	}
+
+	return consent, nil
 }
 
 // //////////////////////////////////////////////////
@@ -44,279 +57,177 @@ func NewLazyConsent(bytes []byte) *LazyConsent {
 }
 
 // Version returns the version of the consent string
-func (c *LazyConsent) Version() (int, error) {
-	value, err := c.ReadIntField(VersionField.Offset, VersionField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("decode failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) Version() int {
+	return c.ReadIntField(VersionField.Offset, VersionField.NbBits)
 }
 
 // Created returns the creation date of the consent string
-func (c *LazyConsent) Created() (time.Time, error) {
-	value, err := c.ReadTimeField(CreatedField.Offset)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("created parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) Created() time.Time {
+	return c.ReadTimeField(CreatedField.Offset)
 }
 
 // LastUpdated returns the last update date of the consent string
-func (c *LazyConsent) LastUpdated() (time.Time, error) {
-	value, err := c.ReadTimeField(LastUpdatedField.Offset)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("last updated parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) LastUpdated() time.Time {
+	return c.ReadTimeField(LastUpdatedField.Offset)
 }
 
 // CMPID returns the Consent Management Platform ID
-func (c *LazyConsent) CMPID() (int, error) {
-	value, err := c.ReadIntField(CMPIDField.Offset, CMPIDField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("cmp id parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) CMPID() int {
+	return c.ReadIntField(CMPIDField.Offset, CMPIDField.NbBits)
 }
 
 // CMPVersion returns the Consent Management Platform version
-func (c *LazyConsent) CMPVersion() (int, error) {
-	value, err := c.ReadIntField(CMPVersionField.Offset, CMPVersionField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("cmp version parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) CMPVersion() int {
+	return c.ReadIntField(CMPVersionField.Offset, CMPVersionField.NbBits)
 }
 
 // ConsentScreen returns the consent screen number
-func (c *LazyConsent) ConsentScreen() (int, error) {
-	value, err := c.ReadIntField(ConsentScreenField.Offset, ConsentScreenField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("consent screen parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) ConsentScreen() int {
+	return c.ReadIntField(ConsentScreenField.Offset, ConsentScreenField.NbBits)
 }
 
 // ConsentLanguage returns the consent language
-func (c *LazyConsent) ConsentLanguage() (string, error) {
-	value, err := c.ReadStringField(ConsentLanguageField.Offset, ConsentLanguageField.NbBits)
-	if err != nil {
-		return "", fmt.Errorf("consent language parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) ConsentLanguage() string {
+	return c.ReadStringField(ConsentLanguageField.Offset, ConsentLanguageField.NbBits)
 }
 
 // VendorListVersion returns the vendor list version
-func (c *LazyConsent) VendorListVersion() (int, error) {
-	value, err := c.ReadIntField(VendorListVersionField.Offset, VendorListVersionField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("vendor list version parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) VendorListVersion() int {
+	return c.ReadIntField(VendorListVersionField.Offset, VendorListVersionField.NbBits)
 }
 
 // TcfPolicyVersion returns the TCF policy version
-func (c *LazyConsent) TcfPolicyVersion() (int, error) {
-	value, err := c.ReadIntField(TcfPolicyVersionField.Offset, TcfPolicyVersionField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("tcf policy version parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) TcfPolicyVersion() int {
+	return c.ReadIntField(TcfPolicyVersionField.Offset, TcfPolicyVersionField.NbBits)
 }
 
 // IsServiceSpecific checks if the consent is service specific
-func (c *LazyConsent) IsServiceSpecific() (bool, error) {
-	value, err := c.ReadBoolField(IsServiceSpecificField.Offset)
-	if err != nil {
-		return false, fmt.Errorf("is service specific parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) IsServiceSpecific() bool {
+	return c.ReadBoolField(IsServiceSpecificField.Offset)
 }
 
 // UseNonStandardStacks checks if the consent uses non standard stacks
-func (c *LazyConsent) UseNonStandardStacks() (bool, error) {
-	value, err := c.ReadBoolField(UseNonStandardStacksField.Offset)
-	if err != nil {
-		return false, fmt.Errorf("use non standard stacks parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) UseNonStandardStacks() bool {
+	return c.ReadBoolField(UseNonStandardStacksField.Offset)
 }
 
 // PurposeOneTreatment checks if the consent is for one treatment
-func (c *LazyConsent) PurposeOneTreatment() (bool, error) {
-	value, err := c.ReadBoolField(PurposeOneTreatmentField.Offset)
-	if err != nil {
-		return false, fmt.Errorf("purpose one treatment parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) PurposeOneTreatment() bool {
+	return c.ReadBoolField(PurposeOneTreatmentField.Offset)
 }
 
 // PublisherCC returns the publisher country code
-func (c *LazyConsent) PublisherCC() (string, error) {
-	value, err := c.ReadStringField(PublisherCCField.Offset, PublisherCCField.NbBits)
-	if err != nil {
-		return "", fmt.Errorf("publisher country code parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) PublisherCC() string {
+	return c.ReadStringField(PublisherCCField.Offset, PublisherCCField.NbBits)
 }
 
 // IsRangeEncoding checks if the consent is using range encoding
-func (c *LazyConsent) IsRangeEncoding() (bool, error) {
-	value, err := c.ReadBoolField(IsRangeEncodingField.Offset)
-	if err != nil {
-		return false, fmt.Errorf("is range encoding parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) IsRangeEncoding() bool {
+	return c.ReadBoolField(IsRangeEncodingField.Offset)
 }
 
 // NumRangeEntries returns the number of range entries
-func (c *LazyConsent) NumRangeEntries() (int, error) {
-	value, err := c.ReadIntField(NumRangeEntriesField.Offset, NumRangeEntriesField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("num range entries parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) NumRangeEntries() int {
+	return c.ReadIntField(NumRangeEntriesField.Offset, NumRangeEntriesField.NbBits)
 }
 
 // MaxVendorID returns the maximum vendor ID
-func (c *LazyConsent) MaxVendorID() (int, error) {
-	value, err := c.ReadIntField(MaxVendorIDField.Offset, MaxVendorIDField.NbBits)
-	if err != nil {
-		return 0, fmt.Errorf("max vendor id parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) MaxVendorID() int {
+	return c.ReadIntField(MaxVendorIDField.Offset, MaxVendorIDField.NbBits)
 }
 
 // EveryPurposeAllowed checks if every purpose number is allowed
-func (c *LazyConsent) EveryPurposeAllowed(numbers []int) (bool, error) {
+func (c *LazyConsent) EveryPurposeAllowed(numbers []int) bool {
 	for _, number := range numbers {
-		allowed, err := c.PurposeAllowed(number)
-		if err != nil {
-			return false, err
-		}
-		if !allowed {
-			return false, nil
+		if allowed := c.PurposeAllowed(number); !allowed {
+			return false
 		}
 	}
-	return true, nil
+	return true
 }
 
 // PurposeAllowed checks if purpose is allowed
-func (c *LazyConsent) PurposeAllowed(number int) (bool, error) {
-	value, err := c.readBitNumber(number, PurposesConsentField.Offset, PurposesConsentField.NbBits)
-	if err != nil {
-		return false, fmt.Errorf("purposes consent parse failed: %w", err)
+func (c *LazyConsent) PurposeAllowed(number int) bool {
+	return c.readBitNumber(number, PurposesConsentField.Offset, PurposesConsentField.NbBits)
+}
+
+// EveryPurposeLITransparencyAllowed checks if every purposeLITransparency number is allowed
+func (c *LazyConsent) EveryPurposeLITransparencyAllowed(numbers []int) bool {
+	for _, number := range numbers {
+		if allowed := c.PurposeLITransparencyAllowed(number); !allowed {
+			return false
+		}
 	}
-	return value, nil
+	return true
 }
 
 // PurposeLITransparencyAllowed checks if purposeLITransparency is allowed
-func (c *LazyConsent) PurposeLITransparencyAllowed(number int) (bool, error) {
-	value, err := c.readBitNumber(number, PurposesLITransparencyField.Offset, PurposesLITransparencyField.NbBits)
-
-	if err != nil {
-		return false, fmt.Errorf("purposes li transparency parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) PurposeLITransparencyAllowed(number int) bool {
+	return c.readBitNumber(number, PurposesLITransparencyField.Offset, PurposesLITransparencyField.NbBits)
 }
 
 // EverySpecialFeatureAllowed checks every special feature number is allowed
-func (c *LazyConsent) EverySpecialFeatureAllowed(numbers []int) (bool, error) {
+func (c *LazyConsent) EverySpecialFeatureAllowed(numbers []int) bool {
 	for _, number := range numbers {
-		allowed, err := c.SpecialFeatureAllowed(number)
-		if err != nil {
-			return false, err
-		}
-		if !allowed {
-			return false, nil
+		if allowed := c.SpecialFeatureAllowed(number); !allowed {
+			return false
 		}
 	}
-	return true, nil
+	return true
 }
 
 // SpecialFeatureAllowed checks if special feature is allowed
-func (c *LazyConsent) SpecialFeatureAllowed(number int) (bool, error) {
-	value, err := c.readBitNumber(number, SpecialFeatureOptInsField.Offset, SpecialFeatureOptInsField.NbBits)
-	if err != nil {
-		return false, fmt.Errorf("special feature opt-ins parse failed: %w", err)
-	}
-	return value, nil
+func (c *LazyConsent) SpecialFeatureAllowed(number int) bool {
+	return c.readBitNumber(number, SpecialFeatureOptInsField.Offset, SpecialFeatureOptInsField.NbBits)
 }
 
 // VendorAllowed checks if vendor is in the list of vendors user has given his consent to
-func (c *LazyConsent) VendorAllowed(number int) (bool, error) {
+func (c *LazyConsent) VendorAllowed(number int) bool {
 
-	isRangeEncoding, err := c.IsRangeEncoding()
-	if err != nil {
-		return false, err
-	}
+	if c.IsRangeEncoding() {
 
-	if isRangeEncoding {
-		numEntries, err := c.NumRangeEntries()
-		if err != nil {
-			return false, err
+		numEntries := c.NumRangeEntries()
+		if numEntries == 0 {
+			return false
 		}
 
 		offset := NumRangeEntriesField.NextOffset()
 		for i := 0; i < int(numEntries); i++ {
 
-			var isRange bool
-			if isRange, err = c.ReadBoolField(offset); err != nil {
-				return false, fmt.Errorf("is range parse failed: %w", err)
-			}
+			isRange := c.ReadBoolField(offset)
 			offset += 1
 
-			var start, end int
-			if start, err = c.ReadIntField(offset, 16); err != nil {
-				return false, fmt.Errorf("start range parse failed: %w", err)
-			}
+			start := c.ReadIntField(offset, 16)
 			offset += 16
 
+			end := start
 			if isRange {
-				if end, err = c.ReadIntField(offset, 16); err != nil {
-					return false, fmt.Errorf("end range parse failed: %w", err)
-				}
+				end = c.ReadIntField(offset, 16)
 				offset += 16
-			} else {
-				end = start
 			}
 
 			if start <= number && number <= end {
-				return true, nil
+				return true
 			}
 		}
 
-		return false, nil
+		return false
 	}
 
-	maxVendorId, err := c.MaxVendorID()
-	if err != nil {
-		return false, err
+	maxVendorId := c.MaxVendorID()
+	if maxVendorId == 0 {
+		return false
 	}
 
-	consentedVendor, err := c.readBitNumber(number, ConsentedVendorsOffset, int(maxVendorId))
-	if err != nil {
-		return false, fmt.Errorf("consented vendors parse failed: %w", err)
-	}
-	return consentedVendor, nil
+	return c.readBitNumber(number, ConsentedVendorsOffset, maxVendorId)
 }
 
 // readBitNumber reads bit number as bool and checks boundaries
-func (c *LazyConsent) readBitNumber(number, offset, maxNbbBits int) (bool, error) {
-	if c == nil {
-		return false, fmt.Errorf("bits is nil")
+func (c *LazyConsent) readBitNumber(number, offset, maxNbbBits int) bool {
+	if c == nil || number < 1 || number > maxNbbBits {
+		return false
 	}
-	if number < 1 {
-		return false, fmt.Errorf("bit number #%d is lower than 1", number)
-	}
-	if number > maxNbbBits {
-		return false, fmt.Errorf("bit number #%d is higher than max bit number #%d", number, maxNbbBits)
-	}
-	value, err := c.ReadBoolField(offset + number - 1)
-	if err != nil {
-		return false, err
-	}
-	return value, nil
+	return c.ReadBoolField(offset + number - 1)
 }
 
 // //////////////////////////////////////////////////

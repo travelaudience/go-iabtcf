@@ -58,9 +58,9 @@ func TestMemory(t *testing.T) {
 					if err != nil {
 						fmt.Printf("[error] unable to parse consent string: %s \n", err.Error())
 					} else {
-						allowed, _ := parsed.VendorAllowed(TravelAudienceVendorID)
-						purposesAllowed, _ := parsed.EveryPurposeAllowed(PurposesList)
-						specialFeaturesAllowed, _ := parsed.EveryPurposeAllowed(SpecialFeaturesList)
+						allowed := parsed.VendorAllowed(TravelAudienceVendorID)
+						purposesAllowed := parsed.EveryPurposeAllowed(PurposesList)
+						specialFeaturesAllowed := parsed.EveryPurposeAllowed(SpecialFeaturesList)
 						if err != nil {
 							fmt.Printf("[error] unable to check vendor: %s \n", err.Error())
 						} else if !allowed {
