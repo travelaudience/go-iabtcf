@@ -59,31 +59,32 @@ func (r *Reader) ReadString(length int) (string, error) {
 }
 
 // ReadBitField reads the next n bits into a bit map
-func (r *Reader) ReadBitField(length int) (*Bits, error) {
+func (r *Reader) ReadBitField(length int) (Bits, error) {
 	remaining := length % 8
 	nb := (length - remaining) / 8
 	bytes := make([]byte, 0, nb+1)
 	for i := 0; i < nb; i++ {
 		b, err := r.ReadByte()
 		if err != nil {
-			return nil, fmt.Errorf("ReadByte failed: %s", err.Error())
+			return Bits{}, fmt.Errorf("ReadByte failed: %s", err.Error())
 		}
 		bytes = append(bytes, b)
 	}
 	if remaining > 0 {
 		block, err := r.ReadBits(uint(remaining))
 		if err != nil {
-			return nil, fmt.Errorf("ReadBits failed: %s", err.Error())
+			return Bits{}, fmt.Errorf("ReadBits failed: %s", err.Error())
 		}
 		// note: bits are right aligned
 		b := byte(block << (8 - remaining))
 		bytes = append(bytes, b)
 	}
-	return &Bits{Bytes: bytes, Length: length}, nil
+	return Bits{Bytes: bytes, Length: length}, nil
 }
 
-func (r *Reader) ReadRangeEntries(length int) ([]*RangeEntry, error) {
-	res := make([]*RangeEntry, 0, length)
+// ReadRangeEntries reads a list of range entries
+func (r *Reader) ReadRangeEntries(length int) ([]RangeEntry, error) {
+	res := make([]RangeEntry, 0, length)
 	var err error
 	for i := 0; i < length; i++ {
 		var isRange bool
@@ -101,7 +102,7 @@ func (r *Reader) ReadRangeEntries(length int) ([]*RangeEntry, error) {
 		} else {
 			end = start
 		}
-		res = append(res, &RangeEntry{StartOrOnlyVendorId: start, EndVendorID: end})
+		res = append(res, RangeEntry{StartOrOnlyVendorId: start, EndVendorID: end})
 	}
 	return res, nil
 }

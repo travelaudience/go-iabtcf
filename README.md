@@ -14,7 +14,7 @@ Library provides convenient way to check if:
 
     go get -v github.com/travelaudience/go-iabtcf
     
-### Example
+### Example - Normal Parsing
 
     package main
     
@@ -34,6 +34,23 @@ Library provides convenient way to check if:
       sf := s.EverySpecialFeatureAllowed([]int{1})
       va := s.VendorAllowed(1)
     }
+
+### Example - Lazy Parsing
+
+    parsed, err := LazyParseCoreString(c)
+				if err != nil {
+					fmt.Printf("[error] unable to parse consent string: %s \n", err.Error())
+				} else {
+					allowed, _ := parsed.VendorAllowed(TravelAudienceVendorID)
+					purposesAllowed, _ := parsed.EveryPurposeAllowed(TCF2PurposesList)
+					specialFeaturesAllowed, _ := parsed.EveryPurposeAllowed(TCF2SpecialFeaturesList)
+					parsed.EverySpecialFeatureAllowed(TCF2SpecialFeaturesList)
+					if err != nil {
+						fmt.Printf("[error] unable to check vendor: %s \n", err.Error())
+					} else if !allowed {
+						fmt.Printf("[error] travel audience not consented: purposesAllowed=%t, specialFeaturesAllowed=%t \n", purposesAllowed, specialFeaturesAllowed)
+					}
+				}
     
 ## Contributing
 

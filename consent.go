@@ -18,16 +18,16 @@ type Consent struct {
 	TcfPolicyVersion       int
 	IsServiceSpecific      bool
 	UseNonStandardStacks   bool
-	SpecialFeatureOptIns   *Bits
-	PurposesConsent        *Bits
-	PurposesLITransparency *Bits
+	SpecialFeatureOptIns   Bits
+	PurposesConsent        Bits
+	PurposesLITransparency Bits
 	PurposeOneTreatment    bool
 	PublisherCC            string
 	MaxVendorID            int
 	IsRangeEncoding        bool
-	ConsentedVendors       *Bits
+	ConsentedVendors       Bits
 	NumEntries             int
-	RangeEntries           []*RangeEntry
+	RangeEntries           []RangeEntry
 }
 
 // RangeEntry defines a range groups of Vendor IDs who have been disclosed to a user

@@ -9,16 +9,19 @@ import (
 // //////////////////////////////////////////////////
 // bits
 
+// Bits represents a bitset with some helpers to read int, bool, string and time fields
 type Bits struct {
 	Length int
 	Bytes  []byte
 }
 
+// HasBit checks if the bit number is set
 func (b *Bits) HasBit(number int) bool {
 	value, _ := b.ReadBoolField(number - 1)
 	return value
 }
 
+// ReadInt64Field reads an int64 field of nbBits bits starting at offset
 func (b *Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
 	if err := b.checkBounds(offset, nbBits); err != nil {
 		return 0, err
@@ -41,6 +44,7 @@ func (b *Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
 	return result, nil
 }
 
+// ReadIntField reads an int field of nbBits bits starting at offset
 func (b *Bits) ReadIntField(offset, nbBits int) (int, error) {
 	value, err := b.ReadInt64Field(offset, nbBits)
 	if err != nil {
@@ -53,6 +57,7 @@ const (
 	TimeNbBits = 36
 )
 
+// ReadTimeField reads a time field of 36 bits starting at offset
 func (b *Bits) ReadTimeField(offset int) (time.Time, error) {
 	ds, err := b.ReadInt64Field(offset, TimeNbBits)
 	if err != nil {
@@ -65,6 +70,10 @@ const (
 	CharacterNbBits = 6
 )
 
+// ReadStringField reads a string field of nbBits bits starting at offset
+//
+// note: each character is represented by 6 bits, so the number of bits must be a multiple of 6
+// note: the characters are represented by the uppercase alphabet starting from 'A'
 func (b *Bits) ReadStringField(offset, nbBits int) (string, error) {
 	length := nbBits / CharacterNbBits
 	if nbBits%CharacterNbBits != 0 {
@@ -87,6 +96,7 @@ const (
 	BoolNbBits = 1
 )
 
+// ReadBoolField reads a bool field of 1 bit starting at offset
 func (b *Bits) ReadBoolField(offset int) (bool, error) {
 	value, err := b.ReadInt64Field(offset, BoolNbBits)
 	if err != nil {
@@ -108,6 +118,7 @@ func (b *Bits) checkBounds(offset, nbBits int) error {
 	return nil
 }
 
+// ToBitString returns the bitset as a string of bits ( human readable 0s and 1s )
 func (bits *Bits) ToBitString() string {
 	if bits == nil {
 		return ""
@@ -133,6 +144,7 @@ func (bits *Bits) ToBitString() string {
 // //////////////////////////////////////////////////
 // bit string helper
 
+// BitStringToBits converts a bit string to a Bits struct
 func BitStringToBits(value string) Bits {
 	return Bits{
 		Length: len(strings.ReplaceAll(string(value), " ", "")),
@@ -140,6 +152,7 @@ func BitStringToBits(value string) Bits {
 	}
 }
 
+// BitStringToBytes converts a bit string to a byte slice
 func BitStringToBytes(value string) []byte {
 	bytes := make([]byte, 0, len(value)/8)
 

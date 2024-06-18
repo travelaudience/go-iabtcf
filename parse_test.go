@@ -35,7 +35,7 @@ func TestConsentMethods(t *testing.T) {
 		specialFeaturesTestCases map[string]*SpecialFeaturesTestCase
 		wantMaxVendorID          int
 		wantIsRangeEncoded       bool
-		wantRangeEntries         []*RangeEntry
+		wantRangeEntries         []RangeEntry
 		wantVendors              string
 		vendorTestCases          map[string]*VendorTestCase
 		wantPublisherCC          string
@@ -44,11 +44,11 @@ func TestConsentMethods(t *testing.T) {
 	testCases := map[string]*TestCase{
 		"empty": {
 			consentString: "",
-			wantErr:       "string is empty",
+			wantErr:       "consent string is empty",
 		},
 		"parse-error": {
 			consentString: "BOv1FaTOv1FdvAHABBFRDG-AAAAvRr_7__7-_9_-_f__9uj3Or_v_f__32ccL59v_h_7v-_7fi_20nV4u_1vft9yfk1-5ctDztp507iakivXmqdeb1v_nz3_5pxP78k89r7337Ew_v8_v-b7BCON9YxEiAAA",
-			wantErr:       "RangeEntries parse failed: ReadInt failed: ReadBits failed: read bits (index=923, length=16): bits: length extends beyond range",
+			wantErr:       "range entries parse failed: ReadInt failed: ReadBits failed: read bits (index=923, length=16): bits: length extends beyond range",
 		},
 		"v1": {
 			consentString: "BOzcJxTOzcJxTBcAAAENAiCMAP_AAAAAAAAADTwAQDTgAAAA.IF5EX2S5OI2tho2YdF7BEYYwfJxyigMgShgQIsS8NwIeFbBoGPmAAHBG4JAQAGBAkkACBAQIsHGBcCQABgIgRiRCMQEGMjzNKBJBAggkbI0FACCVmnkHS3ZCY70-6u__bA",
@@ -137,7 +137,7 @@ func TestConsentMethods(t *testing.T) {
 			},
 			wantMaxVendorID:    423,
 			wantIsRangeEncoded: true,
-			wantRangeEntries:   []*RangeEntry{{StartOrOnlyVendorId: 423, EndVendorID: 423}},
+			wantRangeEntries:   []RangeEntry{{StartOrOnlyVendorId: 423, EndVendorID: 423}},
 			vendorTestCases: map[string]*VendorTestCase{
 				"zero": {
 					vendor:      0,
@@ -316,15 +316,10 @@ func TestConsentMethods(t *testing.T) {
 			require.Equal(t, tc.wantIsRangeEncoded, got.IsRangeEncoding, "wrong range encoding")
 			require.Equal(t, tc.wantRangeEntries, got.RangeEntries, "wrong range entries")
 
-			if tc.wantVendors == "" {
-				require.Nil(t, got.ConsentedVendors, "unexpected consented vendors")
-			} else {
-				require.NotNil(t, got.ConsentedVendors, "missing consented vendors")
-				require.Equal(t, tc.wantVendors, got.ConsentedVendors.ToBitString(), "wrong consented vendors")
-				for subName, subTc := range tc.vendorTestCases {
-					gotAllowed := got.VendorAllowed(subTc.vendor)
-					require.Equal(t, subTc.wantAllowed, gotAllowed, "[%s] VendorAllowed failed for vendor %d", subName, subTc.vendor)
-				}
+			require.Equal(t, tc.wantVendors, got.ConsentedVendors.ToBitString(), "wrong consented vendors")
+			for subName, subTc := range tc.vendorTestCases {
+				gotAllowed := got.VendorAllowed(subTc.vendor)
+				require.Equal(t, subTc.wantAllowed, gotAllowed, "[%s] VendorAllowed failed for vendor %d", subName, subTc.vendor)
 			}
 
 			require.Equal(t, tc.wantPublisherCC, got.PublisherCC, "wrong publisher country code")
@@ -354,14 +349,14 @@ func TestParseCoreString(t *testing.T) {
 				ConsentLanguage:        "EN",
 				VendorListVersion:      34,
 				TcfPolicyVersion:       2,
-				SpecialFeatureOptIns:   &Bits{Length: 12, Bytes: []uint8{0xc0, 0x0}},
-				PurposesConsent:        &Bits{Length: 24, Bytes: []uint8{0xff, 0xc0, 0x0}},
-				PurposesLITransparency: &Bits{Length: 24, Bytes: []uint8{0x0, 0x0, 0x0}},
+				SpecialFeatureOptIns:   Bits{Length: 12, Bytes: []uint8{0xc0, 0x0}},
+				PurposesConsent:        Bits{Length: 24, Bytes: []uint8{0xff, 0xc0, 0x0}},
+				PurposesLITransparency: Bits{Length: 24, Bytes: []uint8{0x0, 0x0, 0x0}},
 				PublisherCC:            "AA",
 				MaxVendorID:            423,
 				NumEntries:             1,
 				IsRangeEncoding:        true,
-				RangeEntries:           []*RangeEntry{{StartOrOnlyVendorId: 423, EndVendorID: 423}},
+				RangeEntries:           []RangeEntry{{StartOrOnlyVendorId: 423, EndVendorID: 423}},
 			},
 			false,
 		},

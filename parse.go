@@ -6,12 +6,16 @@ import (
 )
 
 // ParseCoreString parses a core string and returns a Consent object
+//
+// note: the consent string is base64 decoded.
+// Then each field is parsed and stored in a Consent object.
+// This parser is optimized for checking multiple vendors + most of the fields.
 func ParseCoreString(c string) (*Consent, error) {
 	if c == "" {
 		return nil, ErrEmptyString
 	}
 	// extract core string
-	cs := strings.SplitN(c, ".", 2)[0]
+	cs, _, _ := strings.Cut(c, ".")
 
 	var b, err = base64.RawURLEncoding.DecodeString(cs)
 	if err != nil {

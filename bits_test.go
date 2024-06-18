@@ -84,7 +84,6 @@ func TestBits(t *testing.T) {
 			for number := 1; number <= gotBits.Length; number++ {
 				gotHasBit := gotBits.HasBit(number)
 				wantHasBit := wantHasBit(number, tc.WantHasBit)
-				// fmt.Printf("[test] HasBit(%d): %v %v \n", number, wantHasBit, gotHasBit)
 				require.Equal(t, wantHasBit, gotHasBit)
 			}
 		})
