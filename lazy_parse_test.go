@@ -95,19 +95,19 @@ func TestLazyParse(t *testing.T) {
 			require.NoError(t, err, "unexpected error")
 			require.Equal(t, wantParsed.IsRangeEncoding, gotIsRangeEncoding)
 
-			for number := 1; number <= wantParsed.SpecialFeatureOptIns.Length; number++ {
+			for number := 1; number <= SpecialFeatureOptInsField.NbBits; number++ {
 				gotAllowed, err := gotParsed.SpecialFeatureAllowed(number)
 				require.NoError(t, err, "unexpected error")
 				require.Equal(t, wantParsed.SpecialFeatureAllowed(number), gotAllowed)
 			}
 
-			for number := 1; number <= wantParsed.PurposesConsent.Length; number++ {
+			for number := 1; number <= PurposesConsentField.NbBits; number++ {
 				gotAllowed, err := gotParsed.PurposeAllowed(number)
 				require.NoError(t, err, "unexpected error")
 				require.Equal(t, wantParsed.PurposeAllowed(number), gotAllowed)
 			}
 
-			for number := 1; number <= wantParsed.PurposesLITransparency.Length; number++ {
+			for number := 1; number <= PurposesLITransparencyField.NbBits; number++ {
 				gotAllowed, err := gotParsed.PurposeLITransparencyAllowed(number)
 				require.NoError(t, err, "unexpected error")
 				require.Equal(t, wantParsed.PurposeLITransparencyAllowed(number), gotAllowed)

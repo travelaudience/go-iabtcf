@@ -14,13 +14,8 @@ import (
 
 func TestMemory(t *testing.T) {
 
-	// nbRoutine := 50
-	// nbParse := 5000
-	// forceToFailed := true
-	// lazy := false
-
-	nbRoutine := 10
-	nbParse := 100
+	nbRoutine := 50
+	nbParse := 5000
 	forceToFailed := false
 	lazy := true
 

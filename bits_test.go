@@ -3,6 +3,7 @@ package iabtcf
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -20,46 +21,56 @@ func TestBits(t *testing.T) {
 	}
 
 	type TestCase struct {
-		Base64     string
-		WantHasBit []int
+		Base64        string
+		WantBitString string
+		WantHasBit    []int
 	}
 
 	values := map[string]*TestCase{
 		"101": {
-			Base64:     "oA",
-			WantHasBit: []int{1, 3},
+			Base64:        "oA",
+			WantBitString: "10100000",
+			WantHasBit:    []int{1, 3},
 		},
 		"00000001": {
-			Base64:     "AQ",
-			WantHasBit: []int{8},
+			Base64:        "AQ",
+			WantBitString: "00000001",
+			WantHasBit:    []int{8},
 		},
 		"00000101": {
-			Base64:     "BQ",
-			WantHasBit: []int{6, 8},
+			Base64:        "BQ",
+			WantBitString: "00000101",
+			WantHasBit:    []int{6, 8},
 		},
 		"10000101": {
-			Base64:     "hQ",
-			WantHasBit: []int{1, 6, 8},
+			Base64:        "hQ",
+			WantBitString: "10000101",
+			WantHasBit:    []int{1, 6, 8},
 		},
 		"00000001 00000101": {
-			Base64:     "AQU",
-			WantHasBit: []int{8, 14, 16},
+			Base64:        "AQU",
+			WantBitString: "00000001 00000101",
+			WantHasBit:    []int{8, 14, 16},
 		},
 		"00000001 101": {
-			Base64:     "AaA",
-			WantHasBit: []int{8, 9, 11},
+			Base64:        "AaA",
+			WantBitString: "00000001 10100000",
+			WantHasBit:    []int{8, 9, 11},
 		},
 		"00000001 00000000": {
-			Base64:     "AQA",
-			WantHasBit: []int{8},
+			Base64:        "AQA",
+			WantBitString: "00000001 00000000",
+			WantHasBit:    []int{8},
 		},
 		"00000001 00000000 1": {
-			Base64:     "AQCA",
-			WantHasBit: []int{8, 17},
+			Base64:        "AQCA",
+			WantBitString: "00000001 00000000 10000000",
+			WantHasBit:    []int{8, 17},
 		},
 		"00000001 0000001": {
-			Base64:     "AQI",
-			WantHasBit: []int{8, 15},
+			Base64:        "AQI",
+			WantBitString: "00000001 00000010",
+			WantHasBit:    []int{8, 15},
 		},
 	}
 
@@ -72,16 +83,17 @@ func TestBits(t *testing.T) {
 			require.NoError(t, err, "unexpected base64 error")
 
 			gotBits := BitStringToBits(bitString)
-			fmt.Printf("[test] bits: %s >>> bytes: %v \n", bitString, gotBits.Bytes)
-			require.Equal(t, wantBytes, gotBits.Bytes)
+			fmt.Printf("[test] bits: %s >>> bytes: %v \n", bitString, gotBits)
+			require.Equal(t, wantBytes, []byte(gotBits))
 
 			fmt.Printf("[test] Bits: %v \n", gotBits)
 
-			fmt.Printf("[test] bytes: %v >>> bits: %s \n", gotBits.Bytes, gotBits.ToBitString())
-			require.Equal(t, bitString, gotBits.ToBitString())
+			fmt.Printf("[test] bytes: %v >>> bits: %s \n", gotBits, gotBits.ToBitString())
+			require.Equal(t, tc.WantBitString, gotBits.ToBitString())
 
 			fmt.Printf("[test] WantHasBit: %v \n", tc.WantHasBit)
-			for number := 1; number <= gotBits.Length; number++ {
+			length := len(strings.ReplaceAll(bitString, " ", ""))
+			for number := 1; number <= length; number++ {
 				gotHasBit := gotBits.HasBit(number)
 				wantHasBit := wantHasBit(number, tc.WantHasBit)
 				require.Equal(t, wantHasBit, gotHasBit)

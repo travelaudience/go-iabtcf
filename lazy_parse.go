@@ -37,14 +37,8 @@ type LazyConsent struct {
 }
 
 func NewLazyConsent(bytes []byte) *LazyConsent {
-	// note: at this point, we do not know the real size of the bitmap
-	// assumption: the length should be at least lower than 8 times the number of bytes
-	length := 8 * len(bytes)
 	return &LazyConsent{
-		Bits: Bits{
-			Length: length,
-			Bytes:  bytes,
-		},
+		Bits: Bits(bytes),
 	}
 }
 

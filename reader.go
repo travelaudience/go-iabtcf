@@ -79,7 +79,7 @@ func (r *Reader) ReadBitField(length int) (Bits, error) {
 		b := byte(block << (8 - remaining))
 		bytes = append(bytes, b)
 	}
-	return Bits{Bytes: bytes, Length: length}, nil
+	return Bits(bytes), nil
 }
 
 // ReadRangeEntries reads a list of range entries

@@ -37,20 +37,24 @@ Library provides convenient way to check if:
 
 ### Example - Lazy Parsing
 
-    parsed, err := LazyParseCoreString(c)
-				if err != nil {
-					fmt.Printf("[error] unable to parse consent string: %s \n", err.Error())
-				} else {
-					allowed, _ := parsed.VendorAllowed(TravelAudienceVendorID)
-					purposesAllowed, _ := parsed.EveryPurposeAllowed(TCF2PurposesList)
-					specialFeaturesAllowed, _ := parsed.EveryPurposeAllowed(TCF2SpecialFeaturesList)
-					parsed.EverySpecialFeatureAllowed(TCF2SpecialFeaturesList)
-					if err != nil {
-						fmt.Printf("[error] unable to check vendor: %s \n", err.Error())
-					} else if !allowed {
-						fmt.Printf("[error] travel audience not consented: purposesAllowed=%t, specialFeaturesAllowed=%t \n", purposesAllowed, specialFeaturesAllowed)
-					}
-				}
+    package main
+    
+    import (
+      "fmt"
+    
+      "github.com/travelaudience/go-iabtcf"
+    )
+    
+    func main() {
+      var s, err = iabtcf.LazyParseCoreString("COwIsAvOwIsAvBIAAAENAPCMAP_AAP_AAAAAFoQBQABAAGAAQAAwACQAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw")
+      if err != nil {
+        panic(err)
+      }
+      
+      pa, err := s.EveryPurposeAllowed([]int{1})
+      sf, err := s.EverySpecialFeatureAllowed([]int{1})
+      va, err := s.VendorAllowed(1)
+    }
     
 ## Contributing
 

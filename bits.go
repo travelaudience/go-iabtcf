@@ -2,7 +2,6 @@ package iabtcf
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -10,31 +9,53 @@ import (
 // bits
 
 // Bits represents a bitset with some helpers to read int, bool, string and time fields
-type Bits struct {
-	Length int
-	Bytes  []byte
-}
+//
+// Bits are stored in a byte slice
+// First byte will store the first 8 bits, second byte the next 8 bits, and so on
+//
+// note: the last byte may contain less than 8 bits. Those bits are left aligned.
+type Bits []byte
 
 // HasBit checks if the bit number is set
-func (b *Bits) HasBit(number int) bool {
+//
+// note: number is not the index and it starts at 1.
+func (b Bits) HasBit(number int) bool {
 	value, _ := b.ReadBoolField(number - 1)
 	return value
 }
 
+const (
+	NbBitInByte  = 8
+	LastBitIndex = NbBitInByte - 1
+)
+
+var (
+	BitMasks = [NbBitInByte]byte{
+		1 << 7,
+		1 << 6,
+		1 << 5,
+		1 << 4,
+		1 << 3,
+		1 << 2,
+		1 << 1,
+		1,
+	}
+)
+
 // ReadInt64Field reads an int64 field of nbBits bits starting at offset
-func (b *Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
+func (b Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
 	if err := b.checkBounds(offset, nbBits); err != nil {
 		return 0, err
 	}
 	var result int64
-	byteIndex := offset / 8
-	bitIndex := offset % 8
+	byteIndex := offset / NbBitInByte
+	bitIndex := offset % NbBitInByte
 	for i := 0; i < nbBits; i++ {
-		mask := byte(1 << (7 - bitIndex))
-		if b.Bytes[byteIndex]&mask == mask {
+		mask := BitMasks[bitIndex]
+		if b[byteIndex]&mask == mask {
 			result |= 1 << (nbBits - 1 - i)
 		}
-		if bitIndex == 7 {
+		if bitIndex == LastBitIndex {
 			byteIndex++
 			bitIndex = 0
 		} else {
@@ -105,37 +126,32 @@ func (b *Bits) ReadBoolField(offset int) (bool, error) {
 	return value == 1, nil
 }
 
-func (b *Bits) checkBounds(offset, nbBits int) error {
+func (b Bits) checkBounds(offset, nbBits int) error {
 	if b == nil {
 		return ErrNilBits
 	}
 	if offset < 0 {
 		return ErrNegativeBitIndex(offset)
 	}
-	if offset+nbBits > b.Length {
-		return ErrBitIndexHigherThanUpperBound(offset+nbBits, b.Length)
+	if offset+nbBits > len(b)*NbBitInByte {
+		return ErrBitIndexHigherThanUpperBound(offset+nbBits, len(b)*NbBitInByte)
 	}
 	return nil
 }
 
 // ToBitString returns the bitset as a string of bits ( human readable 0s and 1s )
-func (bits *Bits) ToBitString() string {
+func (bits Bits) ToBitString() string {
 	if bits == nil {
 		return ""
 	}
 
 	result := ""
 
-	for i, b := range bits.Bytes {
+	for i, b := range bits {
 		if i != 0 {
 			result += " "
 		}
 		result += fmt.Sprintf("%08b", b)
-	}
-
-	trim := 8*len(bits.Bytes) - bits.Length
-	if trim > 0 {
-		result = result[:len(result)-trim]
 	}
 
 	return result
@@ -146,17 +162,14 @@ func (bits *Bits) ToBitString() string {
 
 // BitStringToBits converts a bit string to a Bits struct
 func BitStringToBits(value string) Bits {
-	return Bits{
-		Length: len(strings.ReplaceAll(string(value), " ", "")),
-		Bytes:  BitStringToBytes(value),
-	}
+	return Bits(BitStringToBytes(value))
 }
 
 // BitStringToBytes converts a bit string to a byte slice
 func BitStringToBytes(value string) []byte {
-	bytes := make([]byte, 0, len(value)/8)
+	bytes := make([]byte, 0, len(value)/NbBitInByte)
 
-	position := 7
+	position := LastBitIndex
 	var lastByte byte
 	for i := 0; i < len(value); i++ {
 		if value[i] == ' ' {
@@ -166,14 +179,14 @@ func BitStringToBytes(value string) []byte {
 			lastByte |= 1 << position
 		}
 		if position == 0 {
-			position = 7
+			position = LastBitIndex
 			bytes = append(bytes, lastByte)
 			lastByte = 0
 		} else {
 			position--
 		}
 	}
-	if position != 7 {
+	if position != NbBitInByte-1 {
 		bytes = append(bytes, lastByte)
 	}
 	return bytes

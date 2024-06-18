@@ -57,7 +57,7 @@ func TestReader(t *testing.T) {
 			reader := NewReader(wantBytes)
 			gotBits, err := reader.ReadBitField(length)
 			require.NoError(t, err, "unexpected reader error")
-			fmt.Printf("[test] %s (%d) >>> bytes: %v >>> bitfield: %s \n", bitString, length, gotBits.Bytes, gotBits.ToBitString())
+			fmt.Printf("[test] %s (%d) >>> bytes: %v >>> bitfield: %s \n", bitString, length, gotBits, gotBits.ToBitString())
 		})
 	}
 }
