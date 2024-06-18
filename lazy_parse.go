@@ -2,6 +2,7 @@ package iabtcf
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -15,14 +16,14 @@ import (
 // note: the lazy parser is optimized for checking only one vendor + few fields
 func LazyParseCoreString(c string) (*LazyConsent, error) {
 	if c == "" {
-		return nil, ErrEmptyString
+		return nil, fmt.Errorf("consent string is empty")
 	}
 	// extract core string
 	cs, _, _ := strings.Cut(c, ".")
 
 	var bytes, err = base64.RawURLEncoding.DecodeString(cs)
 	if err != nil {
-		return nil, ErrDecodeFailed(err)
+		return nil, fmt.Errorf("decode failed: %w", err)
 	}
 
 	return NewLazyConsent(bytes), nil
@@ -46,7 +47,7 @@ func NewLazyConsent(bytes []byte) *LazyConsent {
 func (c *LazyConsent) Version() (int, error) {
 	value, err := c.ReadIntField(VersionField.Offset, VersionField.NbBits)
 	if err != nil {
-		return 0, ErrVersionFailed(err)
+		return 0, fmt.Errorf("decode failed: %w", err)
 	}
 	return value, nil
 }
@@ -55,7 +56,7 @@ func (c *LazyConsent) Version() (int, error) {
 func (c *LazyConsent) Created() (time.Time, error) {
 	value, err := c.ReadTimeField(CreatedField.Offset)
 	if err != nil {
-		return time.Time{}, ErrCreatedFailed(err)
+		return time.Time{}, fmt.Errorf("created parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -64,7 +65,7 @@ func (c *LazyConsent) Created() (time.Time, error) {
 func (c *LazyConsent) LastUpdated() (time.Time, error) {
 	value, err := c.ReadTimeField(LastUpdatedField.Offset)
 	if err != nil {
-		return time.Time{}, ErrLastUpdatedFailed(err)
+		return time.Time{}, fmt.Errorf("last updated parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -73,7 +74,7 @@ func (c *LazyConsent) LastUpdated() (time.Time, error) {
 func (c *LazyConsent) CMPID() (int, error) {
 	value, err := c.ReadIntField(CMPIDField.Offset, CMPIDField.NbBits)
 	if err != nil {
-		return 0, ErrCMPIDFailed(err)
+		return 0, fmt.Errorf("cmp id parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -82,7 +83,7 @@ func (c *LazyConsent) CMPID() (int, error) {
 func (c *LazyConsent) CMPVersion() (int, error) {
 	value, err := c.ReadIntField(CMPVersionField.Offset, CMPVersionField.NbBits)
 	if err != nil {
-		return 0, ErrCMPVersionFailed(err)
+		return 0, fmt.Errorf("cmp version parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -91,7 +92,7 @@ func (c *LazyConsent) CMPVersion() (int, error) {
 func (c *LazyConsent) ConsentScreen() (int, error) {
 	value, err := c.ReadIntField(ConsentScreenField.Offset, ConsentScreenField.NbBits)
 	if err != nil {
-		return 0, ErrConsentScreenFailed(err)
+		return 0, fmt.Errorf("consent screen parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -100,7 +101,7 @@ func (c *LazyConsent) ConsentScreen() (int, error) {
 func (c *LazyConsent) ConsentLanguage() (string, error) {
 	value, err := c.ReadStringField(ConsentLanguageField.Offset, ConsentLanguageField.NbBits)
 	if err != nil {
-		return "", ErrConsentLanguageFailed(err)
+		return "", fmt.Errorf("consent language parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -109,7 +110,7 @@ func (c *LazyConsent) ConsentLanguage() (string, error) {
 func (c *LazyConsent) VendorListVersion() (int, error) {
 	value, err := c.ReadIntField(VendorListVersionField.Offset, VendorListVersionField.NbBits)
 	if err != nil {
-		return 0, ErrVendorListVersionFailed(err)
+		return 0, fmt.Errorf("vendor list version parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -118,7 +119,7 @@ func (c *LazyConsent) VendorListVersion() (int, error) {
 func (c *LazyConsent) TcfPolicyVersion() (int, error) {
 	value, err := c.ReadIntField(TcfPolicyVersionField.Offset, TcfPolicyVersionField.NbBits)
 	if err != nil {
-		return 0, ErrTcfPolicyVersionFailed(err)
+		return 0, fmt.Errorf("tcf policy version parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -127,7 +128,7 @@ func (c *LazyConsent) TcfPolicyVersion() (int, error) {
 func (c *LazyConsent) IsServiceSpecific() (bool, error) {
 	value, err := c.ReadBoolField(IsServiceSpecificField.Offset)
 	if err != nil {
-		return false, ErrIsServiceSpecificFailed(err)
+		return false, fmt.Errorf("is service specific parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -136,7 +137,7 @@ func (c *LazyConsent) IsServiceSpecific() (bool, error) {
 func (c *LazyConsent) UseNonStandardStacks() (bool, error) {
 	value, err := c.ReadBoolField(UseNonStandardStacksField.Offset)
 	if err != nil {
-		return false, ErrUseNonStandardStacksFailed(err)
+		return false, fmt.Errorf("use non standard stacks parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -145,7 +146,7 @@ func (c *LazyConsent) UseNonStandardStacks() (bool, error) {
 func (c *LazyConsent) PurposeOneTreatment() (bool, error) {
 	value, err := c.ReadBoolField(PurposeOneTreatmentField.Offset)
 	if err != nil {
-		return false, ErrPurposeOneTreatmentFailed(err)
+		return false, fmt.Errorf("purpose one treatment parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -154,7 +155,7 @@ func (c *LazyConsent) PurposeOneTreatment() (bool, error) {
 func (c *LazyConsent) PublisherCC() (string, error) {
 	value, err := c.ReadStringField(PublisherCCField.Offset, PublisherCCField.NbBits)
 	if err != nil {
-		return "", ErrPublisherCCFailed(err)
+		return "", fmt.Errorf("publisher country code parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -163,7 +164,7 @@ func (c *LazyConsent) PublisherCC() (string, error) {
 func (c *LazyConsent) IsRangeEncoding() (bool, error) {
 	value, err := c.ReadBoolField(IsRangeEncodingField.Offset)
 	if err != nil {
-		return false, ErrIsRangeEncodingFailed(err)
+		return false, fmt.Errorf("is range encoding parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -172,7 +173,7 @@ func (c *LazyConsent) IsRangeEncoding() (bool, error) {
 func (c *LazyConsent) NumRangeEntries() (int, error) {
 	value, err := c.ReadIntField(NumRangeEntriesField.Offset, NumRangeEntriesField.NbBits)
 	if err != nil {
-		return 0, ErrNumEntriesFailed(err)
+		return 0, fmt.Errorf("num range entries parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -181,7 +182,7 @@ func (c *LazyConsent) NumRangeEntries() (int, error) {
 func (c *LazyConsent) MaxVendorID() (int, error) {
 	value, err := c.ReadIntField(MaxVendorIDField.Offset, MaxVendorIDField.NbBits)
 	if err != nil {
-		return 0, ErrMaxVendorIDFailed(err)
+		return 0, fmt.Errorf("max vendor id parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -204,7 +205,7 @@ func (c *LazyConsent) EveryPurposeAllowed(numbers []int) (bool, error) {
 func (c *LazyConsent) PurposeAllowed(number int) (bool, error) {
 	value, err := c.readBitNumber(number, PurposesConsentField.Offset, PurposesConsentField.NbBits)
 	if err != nil {
-		return false, ErrPurposesConsentFailed(err)
+		return false, fmt.Errorf("purposes consent parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -214,7 +215,7 @@ func (c *LazyConsent) PurposeLITransparencyAllowed(number int) (bool, error) {
 	value, err := c.readBitNumber(number, PurposesLITransparencyField.Offset, PurposesLITransparencyField.NbBits)
 
 	if err != nil {
-		return false, ErrPurposesLITransparencyFailed(err)
+		return false, fmt.Errorf("purposes li transparency parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -237,7 +238,7 @@ func (c *LazyConsent) EverySpecialFeatureAllowed(numbers []int) (bool, error) {
 func (c *LazyConsent) SpecialFeatureAllowed(number int) (bool, error) {
 	value, err := c.readBitNumber(number, SpecialFeatureOptInsField.Offset, SpecialFeatureOptInsField.NbBits)
 	if err != nil {
-		return false, ErrSpecialFeatureOptInsFailed(err)
+		return false, fmt.Errorf("special feature opt-ins parse failed: %w", err)
 	}
 	return value, nil
 }
@@ -261,19 +262,19 @@ func (c *LazyConsent) VendorAllowed(number int) (bool, error) {
 
 			var isRange bool
 			if isRange, err = c.ReadBoolField(offset); err != nil {
-				return false, ErrIsRangeFailed(err)
+				return false, fmt.Errorf("is range parse failed: %w", err)
 			}
 			offset += 1
 
 			var start, end int
 			if start, err = c.ReadIntField(offset, 16); err != nil {
-				return false, ErrStartRangeFailed(err)
+				return false, fmt.Errorf("start range parse failed: %w", err)
 			}
 			offset += 16
 
 			if isRange {
 				if end, err = c.ReadIntField(offset, 16); err != nil {
-					return false, ErrEndRangeFailed(err)
+					return false, fmt.Errorf("end range parse failed: %w", err)
 				}
 				offset += 16
 			} else {
@@ -295,7 +296,7 @@ func (c *LazyConsent) VendorAllowed(number int) (bool, error) {
 
 	consentedVendor, err := c.readBitNumber(number, ConsentedVendorsOffset, int(maxVendorId))
 	if err != nil {
-		return false, ErrConsentedVendorsFailed(err)
+		return false, fmt.Errorf("consented vendors parse failed: %w", err)
 	}
 	return consentedVendor, nil
 }
@@ -303,13 +304,13 @@ func (c *LazyConsent) VendorAllowed(number int) (bool, error) {
 // readBitNumber reads bit number as bool and checks boundaries
 func (c *LazyConsent) readBitNumber(number, offset, maxNbbBits int) (bool, error) {
 	if c == nil {
-		return false, ErrNilBits
+		return false, fmt.Errorf("bits is nil")
 	}
 	if number < 1 {
-		return false, ErrBitLowerThanLowerBound(number, 1)
+		return false, fmt.Errorf("bit number #%d is lower than 1", number)
 	}
 	if number > maxNbbBits {
-		return false, ErrBitHigherThanUpperBound(number, maxNbbBits)
+		return false, fmt.Errorf("bit number #%d is higher than max bit number #%d", number, maxNbbBits)
 	}
 	value, err := c.ReadBoolField(offset + number - 1)
 	if err != nil {

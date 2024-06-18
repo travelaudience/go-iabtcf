@@ -98,7 +98,7 @@ const (
 func (b *Bits) ReadStringField(offset, nbBits int) (string, error) {
 	length := nbBits / CharacterNbBits
 	if nbBits%CharacterNbBits != 0 {
-		return "", ErrInvalidNbBitsMultiple(nbBits, CharacterNbBits)
+		return "", fmt.Errorf("number of bits %d is not multiple of %d bits", nbBits, CharacterNbBits)
 	}
 	var buf = make([]byte, 0, length)
 	nextOffset := offset
@@ -128,13 +128,13 @@ func (b *Bits) ReadBoolField(offset int) (bool, error) {
 
 func (b Bits) checkBounds(offset, nbBits int) error {
 	if b == nil {
-		return ErrNilBits
+		return fmt.Errorf("bits is nil")
 	}
 	if offset < 0 {
-		return ErrNegativeBitIndex(offset)
+		return fmt.Errorf("negative bit index: %d", offset)
 	}
 	if offset+nbBits > len(b)*nbBitInByte {
-		return ErrBitIndexHigherThanUpperBound(offset+nbBits, len(b)*nbBitInByte)
+		return fmt.Errorf("bit index %d is higher than upper bound %d", offset+nbBits, len(b)*nbBitInByte)
 	}
 	return nil
 }
