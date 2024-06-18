@@ -25,12 +25,12 @@ func (b Bits) HasBit(number int) bool {
 }
 
 const (
-	NbBitInByte  = 8
-	LastBitIndex = NbBitInByte - 1
+	nbBitInByte  = 8
+	lastBitIndex = nbBitInByte - 1
 )
 
 var (
-	BitMasks = [NbBitInByte]byte{
+	bitMasks = [nbBitInByte]byte{
 		1 << 7,
 		1 << 6,
 		1 << 5,
@@ -48,14 +48,14 @@ func (b Bits) ReadInt64Field(offset, nbBits int) (int64, error) {
 		return 0, err
 	}
 	var result int64
-	byteIndex := offset / NbBitInByte
-	bitIndex := offset % NbBitInByte
+	byteIndex := offset / nbBitInByte
+	bitIndex := offset % nbBitInByte
 	for i := 0; i < nbBits; i++ {
-		mask := BitMasks[bitIndex]
+		mask := bitMasks[bitIndex]
 		if b[byteIndex]&mask == mask {
 			result |= 1 << (nbBits - 1 - i)
 		}
-		if bitIndex == LastBitIndex {
+		if bitIndex == lastBitIndex {
 			byteIndex++
 			bitIndex = 0
 		} else {
@@ -133,8 +133,8 @@ func (b Bits) checkBounds(offset, nbBits int) error {
 	if offset < 0 {
 		return ErrNegativeBitIndex(offset)
 	}
-	if offset+nbBits > len(b)*NbBitInByte {
-		return ErrBitIndexHigherThanUpperBound(offset+nbBits, len(b)*NbBitInByte)
+	if offset+nbBits > len(b)*nbBitInByte {
+		return ErrBitIndexHigherThanUpperBound(offset+nbBits, len(b)*nbBitInByte)
 	}
 	return nil
 }
@@ -167,9 +167,9 @@ func BitStringToBits(value string) Bits {
 
 // BitStringToBytes converts a bit string to a byte slice
 func BitStringToBytes(value string) []byte {
-	bytes := make([]byte, 0, len(value)/NbBitInByte)
+	bytes := make([]byte, 0, len(value)/nbBitInByte)
 
-	position := LastBitIndex
+	position := lastBitIndex
 	var lastByte byte
 	for i := 0; i < len(value); i++ {
 		if value[i] == ' ' {
@@ -179,14 +179,14 @@ func BitStringToBytes(value string) []byte {
 			lastByte |= 1 << position
 		}
 		if position == 0 {
-			position = LastBitIndex
+			position = lastBitIndex
 			bytes = append(bytes, lastByte)
 			lastByte = 0
 		} else {
 			position--
 		}
 	}
-	if position != NbBitInByte-1 {
+	if position != nbBitInByte-1 {
 		bytes = append(bytes, lastByte)
 	}
 	return bytes
