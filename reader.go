@@ -75,7 +75,7 @@ func (r *Reader) ReadBitField(length int) (Bits, error) {
 		if err != nil {
 			return Bits{}, fmt.Errorf("ReadBits failed: %s", err.Error())
 		}
-		// note: bits are right aligned
+		// note: remaining bits are right aligned, while Bits is left aligned
 		b := byte(block << (8 - remaining))
 		bytes = append(bytes, b)
 	}

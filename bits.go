@@ -85,17 +85,17 @@ func (b *Bits) ReadIntField(offset, nbBits int) int {
 }
 
 const (
-	TimeNbBits = 36
+	timeNbBits = 36
 )
 
 // ReadTimeField reads a time field of 36 bits starting at offset
 func (b *Bits) ReadTimeField(offset int) time.Time {
-	ds := b.ReadInt64Field(offset, TimeNbBits)
+	ds := b.ReadInt64Field(offset, timeNbBits)
 	return time.Unix(ds/dsPerSec, (ds%dsPerSec)*nsPerDs).UTC()
 }
 
 const (
-	CharacterNbBits = 6
+	characterNbBits = 6
 )
 
 // ReadStringField reads a string field of nbBits bits starting at offset
@@ -103,24 +103,24 @@ const (
 // note: each character is represented by 6 bits, so the number of bits must be a multiple of 6
 // note: the characters are represented by the uppercase alphabet starting from 'A'
 func (b *Bits) ReadStringField(offset, nbBits int) string {
-	length := nbBits / CharacterNbBits
+	length := nbBits / characterNbBits
 	var buf = make([]byte, 0, length)
 	nextOffset := offset
 	for i := 0; i < length; i++ {
-		value := b.ReadInt64Field(nextOffset, CharacterNbBits)
+		value := b.ReadInt64Field(nextOffset, characterNbBits)
 		buf = append(buf, byte(value)+'A')
-		nextOffset += CharacterNbBits
+		nextOffset += characterNbBits
 	}
 	return string(buf)
 }
 
 const (
-	BoolNbBits = 1
+	boolNbBits = 1
 )
 
 // ReadBoolField reads a bool field of 1 bit starting at offset
 func (b *Bits) ReadBoolField(offset int) bool {
-	return b.ReadInt64Field(offset, BoolNbBits) == 1
+	return b.ReadInt64Field(offset, boolNbBits) == 1
 }
 
 // ToBitString returns the bitset as a string of bits ( human readable 0s and 1s )

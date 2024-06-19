@@ -272,11 +272,11 @@ func NewConsentIntField(nbBits int) *ConsentField {
 }
 
 func NewConsentTimeField() *ConsentField {
-	return NewConsentField(36)
+	return NewConsentField(timeNbBits)
 }
 
 func NewConsentBoolField() *ConsentField {
-	return NewConsentField(1)
+	return NewConsentField(boolNbBits)
 }
 
 func NewConsentBitsField(nbBits int) *ConsentField {
