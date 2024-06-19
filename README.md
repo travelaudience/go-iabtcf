@@ -14,7 +14,7 @@ Library provides convenient way to check if:
 
     go get -v github.com/travelaudience/go-iabtcf
     
-### Example
+### Example - Normal Parsing
 
     package main
     
@@ -26,6 +26,27 @@ Library provides convenient way to check if:
     
     func main() {
       var s, err = iabtcf.ParseCoreString("COwIsAvOwIsAvBIAAAENAPCMAP_AAP_AAAAAFoQBQABAAGAAQAAwACQAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw")
+      if err != nil {
+        panic(err)
+      }
+      
+      pa := s.EveryPurposeAllowed([]int{1})
+      sf := s.EverySpecialFeatureAllowed([]int{1})
+      va := s.VendorAllowed(1)
+    }
+
+### Example - Lazy Parsing
+
+    package main
+    
+    import (
+      "fmt"
+    
+      "github.com/travelaudience/go-iabtcf"
+    )
+    
+    func main() {
+      var s, err = iabtcf.LazyParseCoreString("COwIsAvOwIsAvBIAAAENAPCMAP_AAP_AAAAAFoQBQABAAGAAQAAwACQAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw")
       if err != nil {
         panic(err)
       }
