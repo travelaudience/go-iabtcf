@@ -61,9 +61,7 @@ func TestMemory(t *testing.T) {
 						allowed := parsed.VendorAllowed(TravelAudienceVendorID)
 						purposesAllowed := parsed.EveryPurposeAllowed(PurposesList)
 						specialFeaturesAllowed := parsed.EveryPurposeAllowed(SpecialFeaturesList)
-						if err != nil {
-							fmt.Printf("[error] unable to check vendor: %s \n", err.Error())
-						} else if !allowed {
+						if !allowed {
 							fmt.Printf("[error] travel audience not consented: purposesAllowed=%t, specialFeaturesAllowed=%t \n", purposesAllowed, specialFeaturesAllowed)
 						}
 					}

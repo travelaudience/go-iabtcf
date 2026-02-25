@@ -35,7 +35,7 @@ func TestLazyParse(t *testing.T) {
 			wantParsed, wantErr := ParseCoreString(tc.consent)
 			gotParsed, gotErr := LazyParseCoreString(tc.consent)
 
-			fmt.Printf("\n[test] bits: %s \n", gotParsed.ToBitString())
+			fmt.Printf("\n[test] bits: %s \n", gotParsed.Core.ToBitString())
 
 			require.Equal(t, wantErr, gotErr)
 
