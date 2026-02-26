@@ -141,6 +141,14 @@ func (bits Bits) ToBitString() string {
 	return result
 }
 
+// ReadBitNumber reads bit number as bool and checks boundaries
+func (b *Bits) ReadBitNumber(number, offset, maxNbbBits int) bool {
+	if b == nil || number < 1 || number > maxNbbBits {
+		return false
+	}
+	return b.ReadBoolField(offset + number - 1)
+}
+
 // //////////////////////////////////////////////////
 // bit string helper
 

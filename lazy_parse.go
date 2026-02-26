@@ -21,21 +21,28 @@ func LazyParseCoreString(c string) (*LazyConsent, error) {
 	if c == "" {
 		return nil, fmt.Errorf("consent string is empty")
 	}
-	// extract core string
-	cs, _, _ := strings.Cut(c, ".")
+	everything := strings.Split(c, ".")
 
-	var bytes, err = base64.RawURLEncoding.DecodeString(cs)
+	// extract core string
+	var bytes, err = base64.RawURLEncoding.DecodeString(everything[0])
 	if err != nil {
 		return nil, fmt.Errorf("decode failed: %w", err)
 	}
 
+	// Extract disclosed vendors and publisher TC blocks.  There are an arbitrary number of these blocks in any order,
+	// and each block needs to be inspected to see what it is.
 	consent := NewLazyConsent(bytes)
+	for _, extra := range everything[1:] {
+		if bytes, err := base64.RawURLEncoding.DecodeString(extra); err == nil {
+			consent.Extras = append(consent.Extras, Bits(bytes))
+		}
+	}
 
 	// note: is_range_encoding is the last fixed field.
 	// after this bit, we will have either range entries ( up to num_entries ) or vendor bitset ( up to max_vendor_id ).
 	// we are just checking here that we are able to read at minimum the fixed fields.
 	// if after this bit, the consent string is too short or invalid, we will just return that the vendor is not allowed
-	if consent.Length() < IsRangeEncodingField.NextOffset() {
+	if consent.Core.Length() < IsRangeEncodingField.NextOffset() {
 		return nil, fmt.Errorf("consent string is too short")
 	}
 
@@ -47,93 +54,94 @@ func LazyParseCoreString(c string) (*LazyConsent, error) {
 
 // LazyConsent provides methods to extract data in a lazy mode ( to avoid parsing all fields for nothing )
 type LazyConsent struct {
-	Bits
+	Core   Bits
+	Extras []Bits
 }
 
 func NewLazyConsent(bytes []byte) *LazyConsent {
 	return &LazyConsent{
-		Bits: Bits(bytes),
+		Core: Bits(bytes),
 	}
 }
 
 // Version returns the version of the consent string
 func (c *LazyConsent) Version() int {
-	return c.ReadIntField(VersionField.Offset, VersionField.NbBits)
+	return c.Core.ReadIntField(VersionField.Offset, VersionField.NbBits)
 }
 
 // Created returns the creation date of the consent string
 func (c *LazyConsent) Created() time.Time {
-	return c.ReadTimeField(CreatedField.Offset)
+	return c.Core.ReadTimeField(CreatedField.Offset)
 }
 
 // LastUpdated returns the last update date of the consent string
 func (c *LazyConsent) LastUpdated() time.Time {
-	return c.ReadTimeField(LastUpdatedField.Offset)
+	return c.Core.ReadTimeField(LastUpdatedField.Offset)
 }
 
 // CMPID returns the Consent Management Platform ID
 func (c *LazyConsent) CMPID() int {
-	return c.ReadIntField(CMPIDField.Offset, CMPIDField.NbBits)
+	return c.Core.ReadIntField(CMPIDField.Offset, CMPIDField.NbBits)
 }
 
 // CMPVersion returns the Consent Management Platform version
 func (c *LazyConsent) CMPVersion() int {
-	return c.ReadIntField(CMPVersionField.Offset, CMPVersionField.NbBits)
+	return c.Core.ReadIntField(CMPVersionField.Offset, CMPVersionField.NbBits)
 }
 
 // ConsentScreen returns the consent screen number
 func (c *LazyConsent) ConsentScreen() int {
-	return c.ReadIntField(ConsentScreenField.Offset, ConsentScreenField.NbBits)
+	return c.Core.ReadIntField(ConsentScreenField.Offset, ConsentScreenField.NbBits)
 }
 
 // ConsentLanguage returns the consent language
 func (c *LazyConsent) ConsentLanguage() string {
-	return c.ReadStringField(ConsentLanguageField.Offset, ConsentLanguageField.NbBits)
+	return c.Core.ReadStringField(ConsentLanguageField.Offset, ConsentLanguageField.NbBits)
 }
 
 // VendorListVersion returns the vendor list version
 func (c *LazyConsent) VendorListVersion() int {
-	return c.ReadIntField(VendorListVersionField.Offset, VendorListVersionField.NbBits)
+	return c.Core.ReadIntField(VendorListVersionField.Offset, VendorListVersionField.NbBits)
 }
 
 // TcfPolicyVersion returns the TCF policy version
 func (c *LazyConsent) TcfPolicyVersion() int {
-	return c.ReadIntField(TcfPolicyVersionField.Offset, TcfPolicyVersionField.NbBits)
+	return c.Core.ReadIntField(TcfPolicyVersionField.Offset, TcfPolicyVersionField.NbBits)
 }
 
 // IsServiceSpecific checks if the consent is service specific
 func (c *LazyConsent) IsServiceSpecific() bool {
-	return c.ReadBoolField(IsServiceSpecificField.Offset)
+	return c.Core.ReadBoolField(IsServiceSpecificField.Offset)
 }
 
 // UseNonStandardStacks checks if the consent uses non standard stacks
 func (c *LazyConsent) UseNonStandardStacks() bool {
-	return c.ReadBoolField(UseNonStandardStacksField.Offset)
+	return c.Core.ReadBoolField(UseNonStandardStacksField.Offset)
 }
 
 // PurposeOneTreatment checks if the consent is for one treatment
 func (c *LazyConsent) PurposeOneTreatment() bool {
-	return c.ReadBoolField(PurposeOneTreatmentField.Offset)
+	return c.Core.ReadBoolField(PurposeOneTreatmentField.Offset)
 }
 
 // PublisherCC returns the publisher country code
 func (c *LazyConsent) PublisherCC() string {
-	return c.ReadStringField(PublisherCCField.Offset, PublisherCCField.NbBits)
+	return c.Core.ReadStringField(PublisherCCField.Offset, PublisherCCField.NbBits)
 }
 
 // IsRangeEncoding checks if the consent is using range encoding
 func (c *LazyConsent) IsRangeEncoding() bool {
-	return c.ReadBoolField(IsRangeEncodingField.Offset)
+	return c.Core.ReadBoolField(IsRangeEncodingField.Offset)
 }
 
 // NumRangeEntries returns the number of range entries
 func (c *LazyConsent) NumRangeEntries() int {
-	return c.ReadIntField(NumRangeEntriesField.Offset, NumRangeEntriesField.NbBits)
+	return c.Core.ReadIntField(NumRangeEntriesField.Offset, NumRangeEntriesField.NbBits)
 }
 
 // MaxVendorID returns the maximum vendor ID
 func (c *LazyConsent) MaxVendorID() int {
-	return c.ReadIntField(MaxVendorIDField.Offset, MaxVendorIDField.NbBits)
+	return c.Core.ReadIntField(MaxVendorIDField.Offset, MaxVendorIDField.NbBits)
 }
 
 // EveryPurposeAllowed checks if every purpose number is allowed
@@ -148,7 +156,7 @@ func (c *LazyConsent) EveryPurposeAllowed(numbers []int) bool {
 
 // PurposeAllowed checks if purpose is allowed
 func (c *LazyConsent) PurposeAllowed(number int) bool {
-	return c.readBitNumber(number, PurposesConsentField.Offset, PurposesConsentField.NbBits)
+	return c.Core.ReadBitNumber(number, PurposesConsentField.Offset, PurposesConsentField.NbBits)
 }
 
 // EveryPurposeLITransparencyAllowed checks if every purposeLITransparency number is allowed
@@ -163,7 +171,7 @@ func (c *LazyConsent) EveryPurposeLITransparencyAllowed(numbers []int) bool {
 
 // PurposeLITransparencyAllowed checks if purposeLITransparency is allowed
 func (c *LazyConsent) PurposeLITransparencyAllowed(number int) bool {
-	return c.readBitNumber(number, PurposesLITransparencyField.Offset, PurposesLITransparencyField.NbBits)
+	return c.Core.ReadBitNumber(number, PurposesLITransparencyField.Offset, PurposesLITransparencyField.NbBits)
 }
 
 // EverySpecialFeatureAllowed checks every special feature number is allowed
@@ -178,7 +186,7 @@ func (c *LazyConsent) EverySpecialFeatureAllowed(numbers []int) bool {
 
 // SpecialFeatureAllowed checks if special feature is allowed
 func (c *LazyConsent) SpecialFeatureAllowed(number int) bool {
-	return c.readBitNumber(number, SpecialFeatureOptInsField.Offset, SpecialFeatureOptInsField.NbBits)
+	return c.Core.ReadBitNumber(number, SpecialFeatureOptInsField.Offset, SpecialFeatureOptInsField.NbBits)
 }
 
 // VendorAllowed checks if vendor is in the list of vendors user has given his consent to
@@ -194,15 +202,15 @@ func (c *LazyConsent) VendorAllowed(number int) bool {
 		offset := NumRangeEntriesField.NextOffset()
 		for i := 0; i < int(numEntries); i++ {
 
-			isRange := c.ReadBoolField(offset)
+			isRange := c.Core.ReadBoolField(offset)
 			offset += 1
 
-			start := c.ReadIntField(offset, 16)
+			start := c.Core.ReadIntField(offset, 16)
 			offset += 16
 
 			end := start
 			if isRange {
-				end = c.ReadIntField(offset, 16)
+				end = c.Core.ReadIntField(offset, 16)
 				offset += 16
 			}
 
@@ -219,15 +227,7 @@ func (c *LazyConsent) VendorAllowed(number int) bool {
 		return false
 	}
 
-	return c.readBitNumber(number, ConsentedVendorsOffset, maxVendorId)
-}
-
-// readBitNumber reads bit number as bool and checks boundaries
-func (c *LazyConsent) readBitNumber(number, offset, maxNbbBits int) bool {
-	if c == nil || number < 1 || number > maxNbbBits {
-		return false
-	}
-	return c.ReadBoolField(offset + number - 1)
+	return c.Core.ReadBitNumber(number, ConsentedVendorsOffset, maxVendorId)
 }
 
 // //////////////////////////////////////////////////
